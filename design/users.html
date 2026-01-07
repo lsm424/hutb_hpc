@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HPC 用户统计</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body class="bg-gray-950 text-gray-100">
+  <div class="max-w-7xl mx-auto">
+    <div class="bg-gray-900 border-b border-gray-800">
+      <div class="px-6 py-3 flex items-center gap-3">
+        <div class="flex items-center gap-2 text-gray-300">
+          <i class="fa-solid fa-circle text-red-500"></i>
+          <i class="fa-solid fa-circle text-yellow-500"></i>
+          <i class="fa-solid fa-circle text-green-500"></i>
+        </div>
+        <div class="flex-1 flex items-center gap-2 bg-gray-800 rounded px-3 py-1">
+          <i class="fa-solid fa-lock text-gray-400"></i>
+          <input value="https://hpc.example.local/users" class="flex-1 bg-transparent outline-none text-sm" />
+        </div>
+      </div>
+      <div class="px-6 flex gap-3 text-sm border-t border-gray-800">
+        <button onclick="location.href='dashboard.html'" class="px-3 py-2 hover:bg-gray-800 rounded-t text-gray-300">总览</button>
+        <button onclick="location.href='jobs.html'" class="px-3 py-2 hover:bg-gray-800 rounded-t text-gray-300">作业</button>
+        <button onclick="location.href='nodes.html'" class="px-3 py-2 hover:bg-gray-800 rounded-t text-gray-300">节点</button>
+        <button class="px-3 py-2 bg-gray-800 rounded-t">用户</button>
+      </div>
+    </div>
+
+    <section class="px-6 py-6">
+      <div class="flex items-center gap-3">
+        <label class="text-xs text-gray-400">时间窗口</label>
+        <select id="timewin" class="bg-gray-800 border border-gray-700 rounded px-3 py-2">
+          <option value="5">5分钟</option>
+          <option value="15" selected>15分钟</option>
+          <option value="30">30分钟</option>
+        </select>
+        <div id="toast" class="ml-auto hidden px-3 py-2 bg-gray-800 rounded text-sm"></div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+        <div class="rounded-xl border border-gray-800 bg-gray-900 p-4">
+          <h3 class="font-medium mb-4"><i class="fa-solid fa-users mr-2"></i>用户总览</h3>
+          <div class="flex items-center gap-6">
+            <div>
+              <div id="total" class="text-3xl font-semibold">324</div>
+              <div class="text-xs text-gray-400">总用户数</div>
+            </div>
+            <div>
+              <div id="online" class="text-3xl font-semibold text-emerald-400">57</div>
+              <div class="text-xs text-gray-400">在线用户数</div>
+            </div>
+          </div>
+          <div class="mt-6 text-sm text-gray-300">在线定义：最近<span id="winlabel">15</span>分钟内有交互或心跳</div>
+        </div>
+        <div class="rounded-xl border border-gray-800 bg-gray-900 p-4">
+          <h3 class="font-medium mb-4"><i class="fa-solid fa-user-gear mr-2"></i>角色分布</h3>
+          <div class="space-y-3 text-sm">
+            <button class="w-full flex items-center justify-between hover:bg-gray-800 rounded p-2" onclick="pickRole('管理员')">
+              <span class="text-gray-300">管理员</span>
+              <div class="flex items-center gap-3">
+                <div class="w-48 h-2 bg-gray-800 rounded overflow-hidden"><div class="h-2 bg-indigo-500" style="width:30%"></div></div>
+                <span id="role-admin">41</span>
+              </div>
+            </button>
+            <button class="w-full flex items-center justify-between hover:bg-gray-800 rounded p-2" onclick="pickRole('科研用户')">
+              <span class="text-gray-300">科研用户</span>
+              <div class="flex items-center gap-3">
+                <div class="w-48 h-2 bg-gray-800 rounded overflow-hidden"><div class="h-2 bg-emerald-500" style="width:55%"></div></div>
+                <span id="role-researcher">179</span>
+              </div>
+            </button>
+            <button class="w-full flex items-center justify-between hover:bg-gray-800 rounded p-2" onclick="pickRole('访客')">
+              <span class="text-gray-300">访客</span>
+              <div class="flex items-center gap-3">
+                <div class="w-48 h-2 bg-gray-800 rounded overflow-hidden"><div class="h-2 bg-yellow-500" style="width:15%"></div></div>
+                <span id="role-guest">49</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const online = document.getElementById('online');
+    const winlabel = document.getElementById('winlabel');
+    const timewin = document.getElementById('timewin');
+    const toast = document.getElementById('toast');
+
+    timewin.addEventListener('change', ()=>{
+      const v = Number(timewin.value);
+      winlabel.textContent = v;
+      const base = 57;
+      const delta = v===5? 12 : v===15? 0 : -8;
+      online.textContent = Math.max(10, base+delta);
+      toast.textContent = '时间窗口已切换为 '+v+' 分钟';
+      toast.classList.remove('hidden');
+      setTimeout(()=> toast.classList.add('hidden'), 1500);
+    });
+
+    function pickRole(role){
+      toast.textContent = '已选择角色：'+role+'，可在用户列表中过滤';
+      toast.classList.remove('hidden');
+      setTimeout(()=> toast.classList.add('hidden'), 1500);
+    }
+  </script>
+</body>
+</html>

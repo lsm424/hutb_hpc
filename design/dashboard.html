@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HPC 分区资源总览</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body class="bg-gray-950 text-gray-100 flex">
+  <!-- Sidebar -->
+  <aside class="w-64 fixed inset-y-0 left-0 bg-gray-900 border-r border-gray-800 flex flex-col z-50">
+    <div class="h-16 flex items-center px-6 border-b border-gray-800">
+      <i class="fa-solid fa-server text-indigo-500 text-xl mr-3"></i>
+      <span class="font-bold text-lg tracking-wide">HPC Admin</span>
+    </div>
+    <nav class="flex-1 px-4 py-6 space-y-2">
+      <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 bg-gray-800 text-white rounded-lg transition-colors">
+        <i class="fa-solid fa-gauge w-5 text-center"></i>
+        <span>总览</span>
+      </a>
+      <a href="jobs.html" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
+        <i class="fa-solid fa-list-check w-5 text-center"></i>
+        <span>作业管理</span>
+      </a>
+      <a href="nodes.html" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
+        <i class="fa-solid fa-network-wired w-5 text-center"></i>
+        <span>节点管理</span>
+      </a>
+      <div class="pt-6 mt-6 border-t border-gray-800">
+        <div class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">系统</div>
+        <a href="#" id="btn-settings-nav" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
+          <i class="fa-solid fa-gear w-5 text-center"></i>
+          <span>设置</span>
+        </a>
+      </div>
+    </nav>
+    <div class="p-4 border-t border-gray-800">
+      <div class="flex items-center gap-3 px-4 py-2">
+        <img src="https://ui-avatars.com/api/?name=Admin&background=random" class="w-8 h-8 rounded-full">
+        <div class="text-sm">
+          <div class="font-medium">Administrator</div>
+          <div class="text-xs text-gray-500">Online</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-1 ml-64 min-h-screen flex flex-col">
+    <!-- Top Header -->
+    <header class="h-16 bg-gray-900/50 backdrop-blur border-b border-gray-800 flex items-center justify-between px-6 sticky top-0 z-40">
+      <div class="flex items-center gap-4 text-gray-400 text-sm">
+        <span><i class="fa-solid fa-location-dot mr-2"></i>HPC Cluster A</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 bg-gray-800 rounded px-3 py-1.5 text-sm text-gray-400">
+          <i class="fa-solid fa-search"></i>
+          <input placeholder="全局搜索..." class="bg-transparent outline-none w-48">
+        </div>
+        <button id="btn-refresh" class="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors">
+          <i class="fa-solid fa-rotate-right text-gray-400 text-sm"></i>
+        </button>
+        <button class="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative">
+          <i class="fa-solid fa-bell text-gray-400 text-sm"></i>
+          <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+        </button>
+      </div>
+    </header>
+
+    <div class="p-6 space-y-6">
+      <section class="relative rounded-xl overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1544197150-b99a580bb7a8?q=80&w=1400&auto=format&fit=crop" alt="datacenter" class="w-full h-48 object-cover opacity-40">
+        <div class="absolute inset-0 flex items-center px-6 bg-gradient-to-r from-gray-900/80 to-transparent">
+          <div class="space-y-2">
+            <h1 class="text-2xl font-semibold">分区资源总览</h1>
+            <p class="text-gray-300">近实时刷新，快速洞察CPU/内存/GPU利用率。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-gray-900 rounded-xl p-6 border border-gray-800">
+        <div class="flex items-center gap-3">
+          <label class="text-xs text-gray-400">时间窗口</label>
+          <select id="timewin" class="bg-gray-800 border border-gray-700 rounded px-3 py-2">
+            <option value="5">5分钟</option>
+            <option value="15" selected>15分钟</option>
+            <option value="30">30分钟</option>
+          </select>
+          <div class="ml-auto grid grid-cols-2 gap-12">
+            <div class="text-right">
+              <div id="total" class="text-2xl font-semibold">324</div>
+              <div class="text-xs text-gray-400">总用户数</div>
+            </div>
+            <div class="text-right">
+              <div id="online" class="text-2xl font-semibold text-emerald-400">57</div>
+              <div class="text-xs text-gray-400">在线用户数（最近<span id="winlabel">15</span>分钟）</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-gray-900 rounded-xl p-6 border border-gray-800">
+        <div class="flex flex-wrap gap-3 items-end mb-6">
+          <div>
+            <label class="text-xs text-gray-400">分区</label>
+            <select id="flt-partition" class="mt-1 bg-gray-800 border border-gray-700 rounded px-3 py-2">
+              <option value="all">all</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400">排序</label>
+            <select id="sort-key" class="mt-1 bg-gray-800 border border-gray-700 rounded px-3 py-2">
+              <option value="free">剩余容量</option>
+              <option value="util">利用率</option>
+              <option value="jobs">作业数</option>
+              <option value="nodes">节点数</option>
+            </select>
+          </div>
+          <div class="flex-1"></div>
+          <div class="flex items-center gap-2">
+            <label class="text-xs text-gray-400">刷新间隔</label>
+            <input id="refresh-range" type="range" min="5" max="60" value="10" class="w-40">
+            <span id="refresh-label" class="text-sm text-gray-300">10s</span>
+          </div>
+        </div>
+
+        <div id="grid" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const partitions = [
+      { id:'gpu-a', name:'gpu-a', totalCpu:640, freeCpu:128, totalMem:2048, freeMem:600, totalGpu:64, freeGpu:12, jobCount:48, nodeCount:32, updatedAt:new Date() },
+      { id:'cpu-b', name:'cpu-b', totalCpu:1024, freeCpu:300, totalMem:4096, freeMem:1800, totalGpu:0, freeGpu:0, jobCount:21, nodeCount:44, updatedAt:new Date() },
+      { id:'mem-c', name:'mem-c', totalCpu:256, freeCpu:90, totalMem:8192, freeMem:5000, totalGpu:8, freeGpu:4, jobCount:12, nodeCount:18, updatedAt:new Date() },
+    ];
+
+    const fltPartition = document.getElementById('flt-partition');
+    partitions.forEach(p=>{ const opt=document.createElement('option'); opt.value=p.id; opt.textContent=p.id; fltPartition.appendChild(opt); });
+
+    const grid = document.getElementById('grid');
+    const sortKey = document.getElementById('sort-key');
+    const refreshRange = document.getElementById('refresh-range');
+    const refreshLabel = document.getElementById('refresh-label');
+
+    function utilRate(p){
+      const cpuUtil = 1 - (p.freeCpu / p.totalCpu);
+      const memUtil = 1 - (p.freeMem / p.totalMem);
+      const gpuUtil = p.totalGpu ? (1 - (p.freeGpu / p.totalGpu)) : 0;
+      return ((cpuUtil + memUtil + gpuUtil) / 3);
+    }
+
+    function render(){
+      let data = [...partitions];
+      const part = fltPartition.value;
+      if (part !== 'all') data = data.filter(p=>p.id===part);
+      const key = sortKey.value;
+      if (key==='free') data.sort((a,b)=> (b.freeCpu+b.freeMem+b.freeGpu) - (a.freeCpu+a.freeMem+a.freeGpu));
+      else if (key==='util') data.sort((a,b)=> utilRate(b) - utilRate(a));
+      else if (key==='jobs') data.sort((a,b)=> b.jobCount - a.jobCount);
+      else if (key==='nodes') data.sort((a,b)=> b.nodeCount - a.nodeCount);
+      grid.innerHTML = data.map(p=>{
+        const cpuUtilPct = Math.round((1 - p.freeCpu/p.totalCpu)*100);
+        const memUtilPct = Math.round((1 - p.freeMem/p.totalMem)*100);
+        const gpuUtilPct = p.totalGpu? Math.round((1 - p.freeGpu/p.totalGpu)*100): 0;
+        const ts = new Date(p.updatedAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        return `
+        <div class="rounded-xl border border-gray-800 bg-gray-900 hover:border-gray-700 transition p-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-medium">${p.name} 分区</h3>
+            <span class="text-xs ${cpuUtilPct>85||gpuUtilPct>85? 'text-red-400':'text-emerald-400'}"><i class="fa-solid fa-signal"></i> ${cpuUtilPct>85||gpuUtilPct>85? '紧张':'正常'}</span>
+          </div>
+          <div class="mt-4 space-y-3">
+            <div class="flex items-center gap-2 text-sm">
+              <i class="fa-solid fa-microchip text-purple-400"></i>
+              <span>CPU：总 ${p.totalCpu} / 剩余 ${p.freeCpu}</span>
+              <div class="flex-1 h-2 bg-gray-800 rounded overflow-hidden">
+                <div class="h-2 bg-purple-500" style="width:${cpuUtilPct}%"></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+              <i class="fa-solid fa-memory text-blue-400"></i>
+              <span>内存：总 ${Math.round(p.totalMem/1024)}TB / 剩余 ${p.freeMem}GB</span>
+              <div class="flex-1 h-2 bg-gray-800 rounded overflow-hidden">
+                <div class="h-2 bg-blue-500" style="width:${memUtilPct}%"></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+              <i class="fa-solid fa-square text-emerald-400"></i>
+              <span>GPU：总 ${p.totalGpu} / 剩余 ${p.freeGpu}</span>
+              <div class="flex-1 h-2 bg-gray-800 rounded overflow-hidden">
+                <div class="h-2 bg-emerald-500" style="width:${gpuUtilPct}%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 text-xs text-gray-400">作业数：${p.jobCount} | 节点数：${p.nodeCount} | 更新时间：${ts}</div>
+          <div class="mt-4 flex gap-2">
+            <a href="jobs.html?part=${p.id}" class="flex-1 text-center text-sm px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded transition-colors border border-gray-700 text-gray-300">查看作业</a>
+            <a href="nodes.html?part=${p.id}" class="flex-1 text-center text-sm px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded transition-colors border border-gray-700 text-gray-300">查看节点</a>
+          </div>
+        </div>`
+      }).join('');
+    }
+
+    function randomUpdate(){
+      partitions.forEach(p=>{
+        p.freeCpu = Math.max(0, Math.min(p.totalCpu, p.freeCpu + Math.round((Math.random()-0.5)*20)));
+        p.freeMem = Math.max(0, Math.min(p.totalMem, p.freeMem + Math.round((Math.random()-0.5)*200)));
+        if (p.totalGpu) p.freeGpu = Math.max(0, Math.min(p.totalGpu, p.freeGpu + Math.round((Math.random()-0.5)*2)));
+        p.jobCount = Math.max(0, p.jobCount + Math.round((Math.random()-0.5)*3));
+        p.nodeCount = Math.max(1, p.nodeCount + Math.round((Math.random()-0.5)*1));
+        p.updatedAt = new Date();
+      });
+    }
+
+    let timer = null;
+    function startAutoRefresh(){
+      if (timer) clearInterval(timer);
+      const sec = Number(refreshRange.value);
+      refreshLabel.textContent = sec + 's';
+      timer = setInterval(()=>{ randomUpdate(); render(); }, sec*1000);
+    }
+
+    document.getElementById('btn-refresh').addEventListener('click', ()=>{ randomUpdate(); render(); });
+    document.getElementById('btn-settings-nav').addEventListener('click', ()=>{ alert('设置面板暂未实现'); });
+    sortKey.addEventListener('change', render);
+    fltPartition.addEventListener('change', render);
+    refreshRange.addEventListener('input', startAutoRefresh);
+
+    const timewin = document.getElementById('timewin');
+    const winlabel = document.getElementById('winlabel');
+    const onlineEl = document.getElementById('online');
+    timewin.addEventListener('change', ()=>{
+      const v = Number(timewin.value);
+      winlabel.textContent = v;
+      const base = 57;
+      const delta = v===5? 12 : v===15? 0 : -8;
+      onlineEl.textContent = Math.max(10, base+delta);
+    });
+
+    render();
+    startAutoRefresh();
+  </script>
+</body>
+</html>
