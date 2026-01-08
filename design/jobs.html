@@ -139,36 +139,14 @@
         b.classList.remove('hidden');
     }
 
-    // 生成模拟作业数据
-    function genJobs(count) {
-      const users = ['alice', 'bob', 'carol', 'dave', 'eve', 'frank', 'grace', 'heidi'];
-      const parts = ['gpu-a', 'cpu-b', 'mem-c', 'gpu-b'];
-      const statuses = ['运行中', '排队中', '已完成', '失败', '已取消'];
-      const res = [];
-      for(let i=0; i<count; i++){
-        const id = 'J-' + (102938 + i);
-        const st = statuses[Math.floor(Math.random() * statuses.length)];
-        const isRun = st === '运行中';
-        const isQue = st === '排队中';
-        const isDone = ['已完成', '失败', '已取消'].includes(st);
-        
-        res.push({
-          id,
-          status: st,
-          cpu: [4, 8, 16, 32, 64, 128][Math.floor(Math.random()*6)],
-          mem: [16, 32, 64, 128, 256, 512][Math.floor(Math.random()*6)],
-          gpu: Math.random() > 0.5 ? [1, 2, 4, 8][Math.floor(Math.random()*4)] : 0,
-          start: isQue ? '-' : `12:${10 + Math.floor(Math.random()*50)}`,
-          end: isDone ? `14:${10 + Math.floor(Math.random()*50)}` : '-',
-          user: users[Math.floor(Math.random() * users.length)],
-          node: isQue ? '-' : 'node-' + (10 + Math.floor(Math.random()*20)),
-          part: parts[Math.floor(Math.random() * parts.length)]
-        });
-      }
-      return res.sort((a,b) => (a.status === '运行中' ? -1 : 1));
-    }
-
-    const jobs = genJobs(50);
+    const jobs = [
+      { id:'J-102938', status:'运行中', cpu:32, mem:64, gpu:2, start:'12:10', end:'', user:'alice', node:'node-21', part:'gpu-a' },
+      { id:'J-102940', status:'排队中', cpu:64, mem:128, gpu:4, start:'12:20', end:'', user:'bob', node:'', part:'gpu-a' },
+      { id:'J-102941', status:'已完成', cpu:16, mem:32, gpu:0, start:'10:01', end:'12:00', user:'carol', node:'node-11', part:'cpu-b' },
+      { id:'J-102942', status:'失败', cpu:8, mem:32, gpu:1, start:'11:15', end:'11:35', user:'alice', node:'node-07', part:'gpu-a' },
+      { id:'J-102943', status:'已取消', cpu:128, mem:256, gpu:8, start:'08:05', end:'', user:'dave', node:'', part:'mem-c' },
+      { id:'J-102944', status:'运行中', cpu:4, mem:16, gpu:0, start:'13:00', end:'', user:'eve', node:'node-21', part:'gpu-a' },
+    ];
 
     let current = jobs;
     function render(){
@@ -196,7 +174,7 @@
               <a href="dashboard.html?part=${j.part}" class="text-xs px-2 py-1 rounded border border-gray-700 hover:bg-gray-800 hover:text-white text-gray-400 transition-colors" title="查看分区">
                 <i class="fa-solid fa-gauge"></i> 分区
               </a>
-              ${j.node !== '-' ? `<a href="nodes.html?node=${j.node}" class="text-xs px-2 py-1 rounded border border-gray-700 hover:bg-gray-800 hover:text-white text-gray-400 transition-colors" title="查看节点">
+              ${j.node ? `<a href="nodes.html?node=${j.node}" class="text-xs px-2 py-1 rounded border border-gray-700 hover:bg-gray-800 hover:text-white text-gray-400 transition-colors" title="查看节点">
                 <i class="fa-solid fa-network-wired"></i> 节点
               </a>` : `<span class="text-xs px-2 py-1 rounded border border-gray-800 text-gray-600 cursor-not-allowed"><i class="fa-solid fa-network-wired"></i> 节点</span>`}
             </div>
@@ -220,10 +198,10 @@
             if (m){
               const key = m[1]; const op = m[2]; const val = Number(m[3]); const cur = key==='cpu'? j.cpu : key==='gpu'? j.gpu : j.mem;
               if (op==='>' && !(cur>val)) return false;
-              if (op==='<' && !(cur<val)) return false;
               if (op==='>=' && !(cur>=val)) return false;
               if (op==='<=' && !(cur<=val)) return false;
-              if (op==='=' && cur!==val) return false;
+              if (op==='<' && !(cur<val)) return false;
+              if (op==='=' && !(cur===val)) return false;
             }
           }
         }
@@ -232,12 +210,40 @@
       render();
     }
 
+    function openJob(id){
+      const j = jobs.find(x=>x.id===id);
+      if (!j) return;
+      document.getElementById('detail-title').textContent = j.id + ' 作业详情';
+      document.getElementById('detail-body').innerHTML = `
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">状态：${j.status}</div>
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">分区：${j.part}</div>
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">CPU：${j.cpu}</div>
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">内存：${j.mem}GB</div>
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">GPU：${j.gpu}</div>
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">节点：${j.node||''}</div>
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">开始时间：${j.start}</div>
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">结束时间：${j.end||''}</div>
+        </div>`;
+      const d = document.getElementById('detail'); d.classList.remove('hidden'); d.classList.add('flex');
+    }
+
+    function closeDetail(){ const d=document.getElementById('detail'); d.classList.add('hidden'); d.classList.remove('flex'); }
+    document.getElementById('detail-close').addEventListener('click', closeDetail);
+    document.getElementById('detail-ok').addEventListener('click', closeDetail);
+
     document.getElementById('btn-filter').addEventListener('click', applyFilter);
     document.getElementById('flt-status').addEventListener('change', applyFilter);
-    document.getElementById('flt-user').addEventListener('keyup', (e)=> e.key==='Enter' && applyFilter());
-    document.getElementById('flt-res').addEventListener('keyup', (e)=> e.key==='Enter' && applyFilter());
-    
-    // Initial load
+
+    document.getElementById('btn-export').addEventListener('click', ()=>{
+      const rows = [['作业ID','状态','CPU','内存GB','GPU','开始','结束','申请人','节点','分区'], ...current.map(j=>[j.id,j.status,j.cpu,j.mem,j.gpu,j.start,j.end||'',j.user,j.node||'',j.part])];
+      const csv = rows.map(r=> r.map(x=>`"${String(x).replaceAll('"','""')}"`).join(',')).join('
+');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='jobs_export.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    });
+
     applyFilter();
   </script>
 </body>
