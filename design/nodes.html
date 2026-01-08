@@ -6,6 +6,13 @@
   <title>HPC 节点视图</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .node-card.selected {
+      border-color: #6366f1; /* indigo-500 */
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+  </style>
 </head>
 <body class="bg-gray-950 text-gray-100 flex">
   <!-- Sidebar -->
@@ -27,13 +34,10 @@
         <i class="fa-solid fa-network-wired w-5 text-center"></i>
         <span>节点管理</span>
       </a>
-      <div class="pt-6 mt-6 border-t border-gray-800">
-        <div class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">系统</div>
-        <a href="#" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
-          <i class="fa-solid fa-gear w-5 text-center"></i>
-          <span>设置</span>
-        </a>
-      </div>
+      <a href="daily.html" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
+        <i class="fa-solid fa-calendar-day w-5 text-center"></i>
+        <span>日报</span>
+      </a>
     </nav>
     <div class="p-4 border-t border-gray-800">
       <div class="flex items-center gap-3 px-4 py-2">
@@ -66,7 +70,7 @@
       </div>
     </header>
 
-    <div class="p-6">
+    <div class="p-6 pb-96">
       <div class="flex flex-wrap gap-3 items-end mb-6">
         <div>
           <label class="text-xs text-gray-400">分区</label>
@@ -90,7 +94,70 @@
         <button id="btn-filter" class="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm"><i class="fa-solid fa-filter mr-1"></i>筛选</button>
       </div>
 
-      <div id="cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+      <div id="cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8"></div>
+
+      <!-- Detail Panel -->
+      <div id="node-detail" class="hidden bg-gray-900 border border-gray-800 rounded-xl p-6 animate-fade-in-up">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-lg font-bold flex items-center gap-2">
+                <i class="fa-solid fa-chart-line text-indigo-500"></i>
+                <span id="detail-node-id">Node Detail</span>
+                <span class="text-sm font-normal text-gray-500 ml-2">性能监控</span>
+            </h2>
+            <div class="flex bg-gray-800 rounded-lg p-1">
+                <button onclick="updateChart('1w')" class="px-3 py-1 text-xs rounded hover:bg-gray-700 transition-colors chart-filter active" data-period="1w">近一周</button>
+                <button onclick="updateChart('1m')" class="px-3 py-1 text-xs rounded hover:bg-gray-700 transition-colors chart-filter" data-period="1m">近一月</button>
+                <button onclick="updateChart('3m')" class="px-3 py-1 text-xs rounded hover:bg-gray-700 transition-colors chart-filter" data-period="3m">近三月</button>
+                <button onclick="updateChart('6m')" class="px-3 py-1 text-xs rounded hover:bg-gray-700 transition-colors chart-filter" data-period="6m">近六月</button>
+            </div>
+        </div>
+        
+        <!-- Charts Grid (Stacked Vertically) -->
+        <div class="space-y-6 mb-8">
+            <!-- GPU Chart -->
+            <div>
+                <h3 class="text-sm font-medium text-gray-400 mb-4">显卡使用率趋势</h3>
+                <div class="h-64 w-full border border-gray-800 rounded-lg bg-gray-800/20 p-2">
+                    <canvas id="gpuChart"></canvas>
+                </div>
+            </div>
+             <!-- CPU Chart -->
+            <div>
+                <h3 class="text-sm font-medium text-gray-400 mb-4">CPU 使用率趋势</h3>
+                <div class="h-64 w-full border border-gray-800 rounded-lg bg-gray-800/20 p-2">
+                    <canvas id="cpuChart"></canvas>
+                </div>
+            </div>
+             <!-- Memory Chart -->
+            <div>
+                <h3 class="text-sm font-medium text-gray-400 mb-4">内存使用率趋势</h3>
+                <div class="h-64 w-full border border-gray-800 rounded-lg bg-gray-800/20 p-2">
+                    <canvas id="memChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- GPU List (Moved to Bottom) -->
+        <div>
+            <h3 class="text-sm font-medium text-gray-400 mb-4">显卡状态列表</h3>
+            <div class="overflow-hidden border border-gray-800 rounded-lg">
+                <table class="w-full text-xs">
+                    <thead class="bg-gray-800">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-gray-400">ID</th>
+                            <th class="px-3 py-2 text-left text-gray-400">型号</th>
+                            <th class="px-3 py-2 text-left text-gray-400">显存</th>
+                            <th class="px-3 py-2 text-left text-gray-400">使用率</th>
+                            <th class="px-3 py-2 text-left text-gray-400">温度</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gpu-list-body" class="divide-y divide-gray-800">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -116,8 +183,12 @@
       { id:'node-11', part:'cpu-b', health:'健康', cpu:{total:32, free:20}, mem:{total:256, free:120}, gpu:{total:0, free:0}, jobs:['J-102941'] },
       { id:'node-07', part:'gpu-a', health:'告警', cpu:{total:64, free:8}, mem:{total:256, free:40}, gpu:{total:4, free:0}, jobs:['J-102942'] },
       { id:'node-33', part:'mem-c', health:'离线', cpu:{total:16, free:0}, mem:{total:1024, free:0}, gpu:{total:2, free:0}, jobs:[] },
+      { id:'node-45', part:'gpu-b', health:'健康', cpu:{total:96, free:12}, mem:{total:512, free:128}, gpu:{total:8, free:1}, jobs:[] },
+      { id:'node-46', part:'gpu-b', health:'健康', cpu:{total:96, free:96}, mem:{total:512, free:512}, gpu:{total:8, free:8}, jobs:[] },
     ];
     let cur = nodes;
+    let selectedNodeId = null;
+    let chartInstances = {};
 
     function render(){
       const cards = document.getElementById('cards');
@@ -126,7 +197,7 @@
         return;
       }
       cards.innerHTML = cur.map(n=>`
-        <div class="rounded-xl border border-gray-800 bg-gray-900 hover:border-gray-700 transition p-5 group">
+        <div onclick="selectNode('${n.id}')" class="node-card cursor-pointer rounded-xl border border-gray-800 bg-gray-900 hover:border-gray-700 transition p-5 group ${selectedNodeId===n.id ? 'selected bg-gray-800/50' : ''}">
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center text-gray-400 group-hover:bg-indigo-500/10 group-hover:text-indigo-400 transition-colors">
@@ -171,14 +242,125 @@
           </div>
 
           <div class="flex gap-2">
-            <a href="jobs.html?node=${n.id}" class="flex-1 text-center text-xs px-3 py-2 rounded border border-gray-700 hover:bg-gray-800 hover:text-white text-gray-400 transition-colors">
+            <a href="jobs.html?node=${n.id}" onclick="event.stopPropagation()" class="flex-1 text-center text-xs px-3 py-2 rounded border border-gray-700 hover:bg-gray-800 hover:text-white text-gray-400 transition-colors">
               查看作业
             </a>
-            <a href="dashboard.html?part=${n.part}" class="flex-1 text-center text-xs px-3 py-2 rounded border border-gray-700 hover:bg-gray-800 hover:text-white text-gray-400 transition-colors">
+            <a href="dashboard.html?part=${n.part}" onclick="event.stopPropagation()" class="flex-1 text-center text-xs px-3 py-2 rounded border border-gray-700 hover:bg-gray-800 hover:text-white text-gray-400 transition-colors">
               查看分区
             </a>
           </div>
         </div>`).join('');
+    }
+
+    function selectNode(id) {
+        selectedNodeId = id;
+        render(); // Re-render to update selection style
+        
+        const node = nodes.find(n => n.id === id);
+        if (!node) return;
+
+        document.getElementById('node-detail').classList.remove('hidden');
+        document.getElementById('detail-node-id').textContent = id + ' 详情';
+        
+        // Populate GPU List
+        const gpuCount = node.gpu.total;
+        const tbody = document.getElementById('gpu-list-body');
+        if (gpuCount === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="px-3 py-4 text-center text-gray-500">无GPU资源</td></tr>';
+        } else {
+            let html = '';
+            for(let i=0; i<gpuCount; i++) {
+                const usage = Math.floor(Math.random() * 90) + 10;
+                const temp = Math.floor(Math.random() * 40) + 40;
+                html += `
+                    <tr class="hover:bg-gray-800/50">
+                        <td class="px-3 py-2 text-gray-300">GPU-${i}</td>
+                        <td class="px-3 py-2 text-gray-400">NVIDIA A100</td>
+                        <td class="px-3 py-2 text-gray-400">72G / 80G</td>
+                        <td class="px-3 py-2 text-gray-400"><div class="w-16 h-1.5 bg-gray-800 rounded-full overflow-hidden inline-block align-middle mr-2"><div class="h-full bg-emerald-500" style="width: ${usage}%"></div></div>${usage}%</td>
+                        <td class="px-3 py-2 text-gray-400"><span class="${temp>75?'text-red-400':temp>60?'text-yellow-400':'text-emerald-400'}">${temp}°C</span></td>
+                    </tr>
+                `;
+            }
+            tbody.innerHTML = html;
+        }
+
+        // Initialize/Update Charts
+        updateChart('1w');
+        
+        // Scroll to detail
+        document.getElementById('node-detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function updateChart(period) {
+        // Update active button state
+        document.querySelectorAll('.chart-filter').forEach(btn => {
+            if (btn.dataset.period === period) {
+                btn.classList.add('bg-gray-700', 'text-white');
+            } else {
+                btn.classList.remove('bg-gray-700', 'text-white');
+            }
+        });
+
+        // Configs for different charts
+        const configs = [
+            { id: 'gpuChart', label: '平均 GPU 使用率', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.1)' }, // Indigo
+            { id: 'cpuChart', label: '平均 CPU 使用率', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.1)' }, // Purple
+            { id: 'memChart', label: '平均 内存 使用率', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' }  // Blue
+        ];
+
+        const count = period === '1w' ? 7 : period === '1m' ? 30 : period === '3m' ? 12 : 24;
+        const labels = Array.from({length: count}, (_, i) => i + 1);
+
+        configs.forEach(cfg => {
+            const data = Array.from({length: count}, () => Math.floor(Math.random() * 60) + 20);
+            
+            const ctx = document.getElementById(cfg.id).getContext('2d');
+            
+            if (chartInstances[cfg.id]) {
+                chartInstances[cfg.id].destroy();
+            }
+
+            chartInstances[cfg.id] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: cfg.label + ' (%)',
+                        data: data,
+                        borderColor: cfg.color,
+                        backgroundColor: cfg.bg,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: '#374151' },
+                            ticks: { color: '#9ca3af' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { display: false }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                }
+            });
+        });
     }
 
     function apply(){

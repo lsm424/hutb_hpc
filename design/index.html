@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN" class="dark">
 <head>
   <meta charset="UTF-8" />
@@ -9,9 +9,9 @@
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen">
   <header class="sticky top-0 z-10 bg-gray-900/80 backdrop-blur border-b border-gray-800">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items中心 justify-between">
       <h1 class="text-xl font-semibold"><i class="fa-solid fa-microchip mr-2"></i>华为HPC资源监控平台  交互设计稿墙</h1>
-      <div class="flex items-center gap-2">
+      <div class="flex items中心 gap-2">
         <label class="text-sm text-gray-300">预览缩放</label>
         <input id="zoom" type="range" min="80" max="120" value="100" class="w-32">
       </div>
@@ -23,21 +23,28 @@
       <h2 class="text-lg font-medium mb-3"><i class="fa-solid fa-browser mr-2"></i>页面预览</h2>
       <div id="grid" class="flex flex-col gap-6">
         <div class="border border-gray-800 rounded-xl overflow-hidden">
-          <div class="bg-gray-800 px-4 py-2 text-sm flex items-center gap-3">
+          <div class="bg-gray-800 px-4 py-2 text-sm flex items中心 gap-3">
             <span class="px-2 py-1 rounded bg-gray-700">dashboard.html</span>
             <span class="text-gray-400">分区资源总览（含用户统计）</span>
           </div>
           <iframe src="./dashboard.html" class="w-full h-[900px] bg-black"></iframe>
         </div>
         <div class="border border-gray-800 rounded-xl overflow-hidden">
-          <div class="bg-gray-800 px-4 py-2 text-sm flex items-center gap-3">
+          <div class="bg-gray-800 px-4 py-2 text-sm flex items中心 gap-3">
+            <span class="px-2 py-1 rounded bg-gray-700">daily.html</span>
+            <span class="text-gray-400">日报展示</span>
+          </div>
+          <iframe src="./daily.html" class="w-full h-[900px] bg-black"></iframe>
+        </div>
+        <div class="border border-gray-800 rounded-xl overflow-hidden">
+          <div class="bg-gray-800 px-4 py-2 text-sm flex items中心 gap-3">
             <span class="px-2 py-1 rounded bg-gray-700">jobs.html</span>
             <span class="text-gray-400">作业视图</span>
           </div>
           <iframe src="./jobs.html" class="w-full h-[900px] bg-black"></iframe>
         </div>
         <div class="border border-gray-800 rounded-xl overflow-hidden">
-          <div class="bg-gray-800 px-4 py-2 text-sm flex items-center gap-3">
+          <div class="bg-gray-800 px-4 py-2 text-sm flex items中心 gap-3">
             <span class="px-2 py-1 rounded bg-gray-700">nodes.html</span>
             <span class="text-gray-400">节点视图</span>
           </div>
