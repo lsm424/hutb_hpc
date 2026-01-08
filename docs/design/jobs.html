@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HPC 作业视图</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body class="bg-gray-950 text-gray-100 flex">
+  <!-- Sidebar -->
+  <aside class="w-64 fixed inset-y-0 left-0 bg-gray-900 border-r border-gray-800 flex flex-col z-50">
+    <div class="h-16 flex items-center px-6 border-b border-gray-800">
+      <i class="fa-solid fa-server text-indigo-500 text-xl mr-3"></i>
+      <span class="font-bold text-lg tracking-wide">HPC Admin</span>
+    </div>
+    <nav class="flex-1 px-4 py-6 space-y-2">
+      <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
+        <i class="fa-solid fa-gauge w-5 text-center"></i>
+        <span>总览</span>
+      </a>
+      <a href="jobs.html" class="flex items-center gap-3 px-4 py-3 bg-gray-800 text-white rounded-lg transition-colors">
+        <i class="fa-solid fa-list-check w-5 text-center"></i>
+        <span>作业管理</span>
+      </a>
+      <a href="nodes.html" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
+        <i class="fa-solid fa-network-wired w-5 text-center"></i>
+        <span>节点管理</span>
+      </a>
+      <a href="daily.html" class="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors">
+        <i class="fa-solid fa-calendar-day w-5 text-center"></i>
+        <span>日报</span>
+      </a>
+    </nav>
+    <div class="p-4 border-t border-gray-800">
+      <div class="flex items-center gap-3 px-4 py-2">
+        <img src="https://ui-avatars.com/api/?name=Admin&background=random" class="w-8 h-8 rounded-full">
+        <div class="text-sm">
+          <div class="font-medium">Administrator</div>
+          <div class="text-xs text-gray-500">Online</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-1 ml-64 min-h-screen flex flex-col">
+    <header class="h-16 bg-gray-900/50 backdrop-blur border-b border-gray-800 flex items-center justify-between px-6 sticky top-0 z-40">
+      <div class="flex items-center gap-4 text-gray-400 text-sm">
+        <span><i class="fa-solid fa-location-dot mr-2"></i>HPC Cluster A</span>
+        <span id="cur-part-badge" class="hidden px-2 py-0.5 bg-indigo-900/50 text-indigo-300 rounded text-xs border border-indigo-700/50"></span>
+        <span id="cur-node-badge" class="hidden px-2 py-0.5 bg-indigo-900/50 text-indigo-300 rounded text-xs border border-indigo-700/50"></span>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 bg-gray-800 rounded px-3 py-1.5 text-sm text-gray-400">
+          <i class="fa-solid fa-search"></i>
+          <input placeholder="搜索作业ID/用户..." class="bg-transparent outline-none w-48">
+        </div>
+        <button class="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative">
+          <i class="fa-solid fa-bell text-gray-400 text-sm"></i>
+          <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+        </button>
+      </div>
+    </header>
+
+    <div class="p-6">
+      <div class="flex flex-wrap gap-3 items-end mb-6">
+        <div>
+          <label class="text-xs text-gray-400">状态</label>
+          <select id="flt-status" class="mt-1 bg-gray-800 border border-gray-700 rounded px-3 py-2">
+            <option value="all">全部</option>
+            <option value="运行中">运行中</option>
+            <option value="排队中">排队中</option>
+            <option value="已完成">已完成</option>
+            <option value="已取消">已取消</option>
+            <option value="失败">失败</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">用户</label>
+          <input id="flt-user" placeholder="按申请人" class="mt-1 bg-gray-800 border border-gray-700 rounded px-3 py-2" />
+        </div>
+        <div>
+          <label class="text-xs text-gray-400">资源需求</label>
+          <input id="flt-res" placeholder="例如: cpu>32 gpu>=2" class="mt-1 bg-gray-800 border border-gray-700 rounded px-3 py-2" />
+        </div>
+        <div class="flex-1"></div>
+        <button id="btn-filter" class="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm"><i class="fa-solid fa-filter mr-1"></i>筛选</button>
+        <button id="btn-export" class="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm"><i class="fa-solid fa-download mr-1"></i>导出</button>
+      </div>
+
+      <div class="overflow-hidden border border-gray-800 rounded-xl bg-gray-900">
+        <table class="min-w-full text-sm">
+          <thead class="bg-gray-800/50">
+            <tr class="text-left text-gray-400">
+              <th class="px-4 py-3 font-medium">作业ID</th>
+              <th class="px-4 py-3 font-medium">状态</th>
+              <th class="px-4 py-3 font-medium">CPU/内存/GPU</th>
+              <th class="px-4 py-3 font-medium">开始时间</th>
+              <th class="px-4 py-3 font-medium">结束时间</th>
+              <th class="px-4 py-3 font-medium">申请人</th>
+              <th class="px-4 py-3 font-medium">所属节点</th>
+              <th class="px-4 py-3 font-medium">分区</th>
+              <th class="px-4 py-3 font-medium w-48">操作</th>
+            </tr>
+          </thead>
+          <tbody id="jobs-body" class="divide-y divide-gray-800"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="detail" class="fixed inset-0 hidden bg-black/60 items-center justify-center p-6 z-50">
+    <div class="bg-gray-900 border border-gray-800 rounded-xl w-full max-w-xl shadow-2xl">
+      <div class="px-5 py-3 flex items-center justify-between border-b border-gray-800">
+        <div class="font-medium" id="detail-title"></div>
+        <button id="detail-close" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-5 space-y-3 text-sm" id="detail-body"></div>
+      <div class="p-4 border-t border-gray-800 text-right">
+        <button id="detail-ok" class="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const partParam = params.get('part');
+    const nodeParam = params.get('node');
+    
+    if (partParam) {
+        const b = document.getElementById('cur-part-badge');
+        b.textContent = '分区: ' + partParam;
+        b.classList.remove('hidden');
+    }
+    if (nodeParam) {
+        const b = document.getElementById('cur-node-badge');
+        b.textContent = '节点: ' + nodeParam;
+        b.classList.remove('hidden');
+    }
+
+    const jobs = [
+      { id:'J-102938', status:'运行中', cpu:32, mem:64, gpu:2, start:'12:10', end:'', user:'alice', node:'node-21', part:'gpu-a' },
+      { id:'J-102940', status:'排队中', cpu:64, mem:128, gpu:4, start:'12:20', end:'', user:'bob', node:'', part:'gpu-a' },
+      { id:'J-102941', status:'已完成', cpu:16, mem:32, gpu:0, start:'10:01', end:'12:00', user:'carol', node:'node-11', part:'cpu-b' },
+      { id:'J-102942', status:'失败', cpu:8, mem:32, gpu:1, start:'11:15', end:'11:35', user:'alice', node:'node-07', part:'gpu-a' },
+      { id:'J-102943', status:'已取消', cpu:128, mem:256, gpu:8, start:'08:05', end:'', user:'dave', node:'', part:'mem-c' },
+      { id:'J-102944', status:'运行中', cpu:4, mem:16, gpu:0, start:'13:00', end:'', user:'eve', node:'node-21', part:'gpu-a' },
+    ];
+
+    let current = jobs;
+    function render(){
+      const tbody = document.getElementById('jobs-body');
+      if (current.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-500">无相关作业数据</td></tr>';
+        return;
+      }
+      tbody.innerHTML = current.map(j=>`
+        <tr class="hover:bg-gray-800/50 transition-colors">
+          <td class="px-4 py-3 font-mono text-gray-300">${j.id}</td>
+          <td class="px-4 py-3"><span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs border ${
+            j.status==='运行中'?'bg-emerald-500/10 text-emerald-400 border-emerald-500/20': 
+            j.status==='排队中'?'bg-yellow-500/10 text-yellow-400 border-yellow-500/20': 
+            j.status==='失败'?'bg-red-500/10 text-red-400 border-red-500/20':
+            'bg-gray-800 text-gray-400 border-gray-700'}">${j.status}</span></td>
+          <td class="px-4 py-3 text-gray-400">${j.cpu}C / ${j.mem}G / ${j.gpu}G</td>
+          <td class="px-4 py-3 text-gray-400">${j.start}</td>
+          <td class="px-4 py-3 text-gray-500">${j.end||'-'}</td>
+          <td class="px-4 py-3 text-gray-300"><div class="flex items-center gap-2"><div class="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs">${j.user[0].toUpperCase()}</div>${j.user}</div></td>
+          <td class="px-4 py-3 text-gray-400">${j.node||'-'}</td>
+          <td class="px-4 py-3 text-gray-400">${j.part}</td>
+          <td class="px-4 py-3">
+            <div class="flex gap-2">
+              <a href="dashboard.html?part=${j.part}" class="text-xs px-2 py-1 rounded border border-gray-700 hover:bg-gray-800 hover:text-white text-gray-400 transition-colors" title="查看分区">
+                <i class="fa-solid fa-gauge"></i> 分区
+              </a>
+              ${j.node ? `<a href="nodes.html?node=${j.node}" class="text-xs px-2 py-1 rounded border border-gray-700 hover:bg-gray-800 hover:text-white text-gray-400 transition-colors" title="查看节点">
+                <i class="fa-solid fa-network-wired"></i> 节点
+              </a>` : `<span class="text-xs px-2 py-1 rounded border border-gray-800 text-gray-600 cursor-not-allowed"><i class="fa-solid fa-network-wired"></i> 节点</span>`}
+            </div>
+          </td>
+        </tr>`).join('');
+    }
+
+    function applyFilter(){
+      const st = document.getElementById('flt-status').value;
+      const user = document.getElementById('flt-user').value.trim().toLowerCase();
+      const res = document.getElementById('flt-res').value.trim();
+      current = jobs.filter(j=>{
+        if (partParam && j.part!==partParam) return false;
+        if (nodeParam && j.node!==nodeParam) return false;
+        if (st!=='all' && j.status!==st) return false;
+        if (user && !j.user.toLowerCase().includes(user)) return false;
+        if (res){
+          const parts = res.split(' ').filter(Boolean);
+          for (const p of parts){
+            const m = p.match(/(cpu|gpu|mem)\s*([><=]+)\s*(\d+)/);
+            if (m){
+              const key = m[1]; const op = m[2]; const val = Number(m[3]); const cur = key==='cpu'? j.cpu : key==='gpu'? j.gpu : j.mem;
+              if (op==='>' && !(cur>val)) return false;
+              if (op==='>=' && !(cur>=val)) return false;
+              if (op==='<=' && !(cur<=val)) return false;
+              if (op==='<' && !(cur<val)) return false;
+              if (op==='=' && !(cur===val)) return false;
+            }
+          }
+        }
+        return true;
+      });
+      render();
+    }
+
+    function openJob(id){
+      const j = jobs.find(x=>x.id===id);
+      if (!j) return;
+      document.getElementById('detail-title').textContent = j.id + ' 作业详情';
+      document.getElementById('detail-body').innerHTML = `
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">状态：${j.status}</div>
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">分区：${j.part}</div>
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">CPU：${j.cpu}</div>
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">内存：${j.mem}GB</div>
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">GPU：${j.gpu}</div>
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">节点：${j.node||''}</div>
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">开始时间：${j.start}</div>
+          <div class="p-3 bg-gray-800 rounded border border-gray-700/50">结束时间：${j.end||''}</div>
+        </div>`;
+      const d = document.getElementById('detail'); d.classList.remove('hidden'); d.classList.add('flex');
+    }
+
+    function closeDetail(){ const d=document.getElementById('detail'); d.classList.add('hidden'); d.classList.remove('flex'); }
+    document.getElementById('detail-close').addEventListener('click', closeDetail);
+    document.getElementById('detail-ok').addEventListener('click', closeDetail);
+
+    document.getElementById('btn-filter').addEventListener('click', applyFilter);
+    document.getElementById('flt-status').addEventListener('change', applyFilter);
+
+    document.getElementById('btn-export').addEventListener('click', ()=>{
+      const rows = [['作业ID','状态','CPU','内存GB','GPU','开始','结束','申请人','节点','分区'], ...current.map(j=>[j.id,j.status,j.cpu,j.mem,j.gpu,j.start,j.end||'',j.user,j.node||'',j.part])];
+      const csv = rows.map(r=> r.map(x=>`"${String(x).replaceAll('"','""')}"`).join(',')).join('
+');
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='jobs_export.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    });
+
+    applyFilter();
+  </script>
+</body>
+</html>

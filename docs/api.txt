@@ -1,0 +1,793 @@
+GET http://hpc.hutb.edu.cn/hpc-backend/slurm/platform/info?_t=1767768967559
+{
+    "success": true,
+    "message": "",
+    "code": 200,
+    "result": {
+        "computingResourceCount": 168,
+        "cpuAllocated": 641,
+        "cpus": 2744,
+        "maxNodeMemoryCapacity": "1.91 TiB",
+        "diskTotalUsage": 3.8190712340890514,
+        "computility": 0.0,
+        "memoryCapacity": "19.29 TiB",
+        "cores": 1276,
+        "memUsageRate": 12.8,
+        "computingResourceUsedCount": 13.0,
+        "maxNodeCpus": 192,
+        "diskTotalCapacity": 747520.0,
+        "memAllocated": "2.48 TiB",
+        "cpuUsageRate": 23.4
+    },
+    "timestamp": 1767768967553
+}
+
+{
+    "success": true,
+    "message": "",
+    "code": 200,
+    "result": {
+        "records": [
+            {
+                "reason": null,
+                "signature": "normal:9d73d9c2e58f41a3855d85e2d7c0d739",
+                "jobTasks": 1,
+                "sharedMem": null,
+                "source": "local",
+                "appCode": "hpc-jupyter-lab",
+                "type": "app",
+                "duration": "1天14小时57分6秒",
+                "slurmJobId": "9168",
+                "errorDir": "/var/hpc-root/c2309050061/logs/hpc-jupyter-lab_c2309050061_2026-01-05-64522.error.9168.txt",
+                "partition": "lixiaohai",
+                "startTime": "2026-01-05 17:56:09",
+                "nodeCount": 1,
+                "id": "2008115282137145346",
+                "mainDir": "/var/hpc-root/c2309050061",
+                "appTag": "with_pytorch2.1.2_with_slurm23.02.4-amd64",
+                "outputDir": "/var/hpc-root/c2309050061/logs/hpc-jupyter-lab_c2309050061_2026-01-05-64522.out.9168.txt",
+                "suspended": null,
+                "createBy": "c2309050061",
+                "submitTime": "2026-01-05 17:56:06",
+                "nodes": "gpu3",
+                "name": "hpc-jupyter-lab-c2309050061-2026-01-05-64566",
+                "nodesFromCount": true,
+                "endTime": "",
+                "detail": {
+                    "job": {
+                        "memory_per_node": {
+                            "number": 65536,
+                            "set": true,
+                            "infinite": false
+                        },
+                        "time_limit": {
+                            "number": 0,
+                            "set": false,
+                            "infinite": true
+                        },
+                        "cpus_per_task": 32,
+                        "standard_output": "/var/hpc-root/c2309050061/logs/hpc-jupyter-lab_c2309050061_2026-01-05-64522.out.%j.txt",
+                        "current_working_directory": "/var/hpc-root/c2309050061",
+                        "standard_error": "/var/hpc-root/c2309050061/logs/hpc-jupyter-lab_c2309050061_2026-01-05-64522.error.%j.txt",
+                        "tres_per_node": "gres:gpu:A100:2",
+                        "nodes_from_count": true,
+                        "environment": [
+                            "CPU=32",
+                            "DEVICE_MOUNT_COUNT=2",
+                            "GPU=2",
+                            "DEVICE_MOUNT_TYPE=nvidia.com/gpu",
+                            "HELM_REPO=helm-hpc-dev",
+                            "HELM_REPO_ADDR=http://10.0.254.102:8081/repository/helm-hpc-dev/",
+                            "NAMESPACE=hpc",
+                            "CHART=hpc-jupyter-lab",
+                            "CHART_VERSION=2.1.1",
+                            "TAG=with_pytorch2.1.2_with_slurm23.02.4-amd64",
+                            "TAGINDEX=3",
+                            "USERPASSWD=123456qwe",
+                            "TRAEFIKHOST=hpc.hutb.edu.cn",
+                            "REDIS_HOST=redis-master.redis",
+                            "REDIS_PORT=6379",
+                            "REDIS_JUICE_DB=1",
+                            "REDIS_PASSWD=admin@123",
+                            "USER_HOME_PREFIX=/var/hpc-root/",
+                            "EXTERNAL_KUBE_CONFIG_FILEPATH=KUBE_FILEPATH",
+                            "ENABLE_AUTH_MIDDLEWARE=true",
+                            "AUTH_MIDDLEWARE_NAME=hpc-external-app-auth-middleware",
+                            "IMAGE_PULL_POLICY=Always",
+                            "ENABLE_SUDO=true",
+                            "DEBUG=false",
+                            "IMAGE=idocker.io/hpc/hpc_jupyterlab"
+                        ],
+                        "partition": "lixiaohai",
+                        "nodes": "1",
+                        "get_user_environment": true,
+                        "qos": "c2309050061",
+                        "user_id": "c2309050061",
+                        "name": "hpc-jupyter-lab-c2309050061-2026-01-05-64566",
+                        "comment": "normal:9d73d9c2e58f41a3855d85e2d7c0d739",
+                        "node_count": 1,
+                        "user": "c2309050061",
+                        "clusters": "fs_hpc",
+                        "account": "c2309050061",
+                        "tasks": 1
+                    },
+                    "script": "#!/bin/bash \nsrun /var/hpc-root/.system/slurm-launch-k8s-app.sh"
+                },
+                "resourceUsed": {
+                    "computingResource": {
+                        "name": "gpu:A100",
+                        "value": 2
+                    },
+                    "mem": "64 GiB",
+                    "gpu:A100": 2,
+                    "cpu": 32
+                },
+                "status": "RUNNING"
+            },
+            {
+                "reason": null,
+                "signature": "normal:3cb34fae94e94674883e004caf1b0046",
+                "jobTasks": 1,
+                "sharedMem": null,
+                "source": "local",
+                "appCode": "hpc-code-server",
+                "type": "app",
+                "duration": "215天23小时21分54秒",
+                "slurmJobId": "8308",
+                "errorDir": "/var/hpc-root/c18811191048/logs/hpc-code-server_c18811191048_2025-06-05-34246.error.8308.txt",
+                "partition": "lixiaohai",
+                "startTime": "2025-06-05 09:31:20",
+                "nodeCount": 1,
+                "id": "1930437182023684097",
+                "mainDir": "/var/hpc-root/c18811191048",
+                "appTag": "codeServer_with_pytorch2.1.2_with_slurm23.02.4-amd64",
+                "outputDir": "/var/hpc-root/c18811191048/logs/hpc-code-server_c18811191048_2025-06-05-34246.out.8308.txt",
+                "suspended": null,
+                "createBy": "c18811191048",
+                "submitTime": "2025-06-05 09:31:04",
+                "nodes": "gpu3",
+                "name": "hpc-code-server-c18811191048-2025-06-05-34262",
+                "nodesFromCount": true,
+                "endTime": "",
+                "detail": {
+                    "job": {
+                        "memory_per_node": {
+                            "number": 65536,
+                            "set": true,
+                            "infinite": false
+                        },
+                        "time_limit": {
+                            "number": 0,
+                            "set": false,
+                            "infinite": true
+                        },
+                        "cpus_per_task": 32,
+                        "standard_output": "/var/hpc-root/c18811191048/logs/hpc-code-server_c18811191048_2025-06-05-34246.out.%j.txt",
+                        "current_working_directory": "/var/hpc-root/c18811191048",
+                        "standard_error": "/var/hpc-root/c18811191048/logs/hpc-code-server_c18811191048_2025-06-05-34246.error.%j.txt",
+                        "tres_per_node": "",
+                        "nodes_from_count": true,
+                        "environment": [
+                            "CPU=32",
+                            "GPU=0",
+                            "HELM_REPO=helm-hpc-dev",
+                            "HELM_REPO_ADDR=http://10.0.254.102:8081/repository/helm-hpc-dev/",
+                            "NAMESPACE=hpc",
+                            "CHART=hpc-code-server",
+                            "CHART_VERSION=2.2.0",
+                            "TAG=codeServer_with_pytorch2.1.2_with_slurm23.02.4-amd64",
+                            "TAGINDEX=1",
+                            "USERPASSWD=Lxh@6502815",
+                            "TRAEFIKHOST=hpc.hutb.edu.cn",
+                            "REDIS_HOST=redis-master.redis",
+                            "REDIS_PORT=6379",
+                            "REDIS_JUICE_DB=1",
+                            "REDIS_PASSWD=admin@123",
+                            "USER_HOME_PREFIX=/var/hpc-root/",
+                            "EXTERNAL_KUBE_CONFIG_FILEPATH=KUBE_FILEPATH",
+                            "ENABLE_AUTH_MIDDLEWARE=true",
+                            "AUTH_MIDDLEWARE_NAME=hpc-external-app-auth-middleware",
+                            "IMAGE_PULL_POLICY=Always",
+                            "ENABLE_SUDO=true",
+                            "DEBUG=false",
+                            "IMAGE=idocker.io/hpc/hpc_code_server"
+                        ],
+                        "partition": "lixiaohai",
+                        "nodes": "1",
+                        "get_user_environment": true,
+                        "qos": "c18811191048",
+                        "user_id": "c18811191048",
+                        "name": "hpc-code-server-c18811191048-2025-06-05-34262",
+                        "comment": "normal:3cb34fae94e94674883e004caf1b0046",
+                        "node_count": 1,
+                        "user": "c18811191048",
+                        "clusters": "fs_hpc",
+                        "account": "c18811191048",
+                        "tasks": 1
+                    },
+                    "script": "#!/bin/bash \nsrun /var/hpc-root/.system/slurm-launch-k8s-app.sh"
+                },
+                "resourceUsed": {
+                    "mem": "64 GiB",
+                    "cpu": 32
+                },
+                "status": "RUNNING"
+            }
+        ],
+        "total": 2,
+        "size": 10,
+        "current": 1,
+        "orders": [],
+        "optimizeCountSql": true,
+        "searchCount": true,
+        "countId": null,
+        "maxLimit": null,
+        "pages": 1
+    },
+    "timestamp": 1767747200489
+}
+
+
+
+http://hpc.hutb.edu.cn/hpc-backend/qos/compositeComputingResourceRelation?_t=1767857167226
+{
+    "success": true,
+    "message": "",
+    "code": 200,
+    "result": {
+        "partitionComputingResource": {
+            "x86GPU": {
+                "mem": "2.38 TiB",
+                "gpu:A100": 16,
+                "cpu": 272
+            },
+            "x86Compute": {
+                "mem": "488.28 GiB",
+                "cpu": 40
+            },
+            "armCompute": {
+                "mem": "1.91 TiB",
+                "cpu": 512
+            },
+            "armFatCompute": {
+                "mem": "3.81 TiB",
+                "cpu": 256
+            },
+            "tszx_gpu_tg150": {
+                "tgpu:TG150": 112,
+                "mem": "6.34 TiB",
+                "cpu": 896
+            },
+            "lixiaohai": {
+                "mem": "488.28 GiB",
+                "gpu:A100": 4,
+                "cpu": 64
+            },
+            "metax_gpu": {
+                "mem": "1.72 TiB",
+                "cpu": 64,
+                "metax_gpu:C500": 8
+            },
+            "inferenceNPU": {
+                "npu:Ascend310P": 12,
+                "mem": "742.19 GiB",
+                "cpu": 256
+            },
+            "trainingNPU": {
+                "npu:Ascend910": 16,
+                "mem": "1.45 TiB",
+                "v_npu:v_Ascend910": 240,
+                "cpu": 384
+            }
+        },
+        "partitionComputingResourceIdled": {
+            "x86GPU": {
+                "mem": "1547.905 GiB",
+                "gpu:A100": 5,
+                "cpu": 95
+            },
+            "x86Compute": {
+                "mem": "458.281 GiB",
+                "cpu": 0
+            },
+            "armCompute": {
+                "mem": "1953.124 GiB",
+                "cpu": 512
+            },
+            "armFatCompute": {
+                "mem": "3906.250 GiB",
+                "cpu": 256
+            },
+            "tszx_gpu_tg150": {
+                "tgpu:TG150": 112,
+                "mem": "6494.138 GiB",
+                "cpu": 896
+            },
+            "lixiaohai": {
+                "mem": "360.281 GiB",
+                "gpu:A100": 2,
+                "cpu": 0
+            },
+            "metax_gpu": {
+                "mem": "1757.813 GiB",
+                "cpu": 64,
+                "metax_gpu:C500": 8
+            },
+            "inferenceNPU": {
+                "npu:Ascend310P": 12,
+                "mem": "742.188 GiB",
+                "cpu": 256
+            },
+            "trainingNPU": {
+                "npu:Ascend910": 16,
+                "mem": "0.000 GiB",
+                "v_npu:v_Ascend910": 240,
+                "cpu": 24
+            }
+        },
+        "nodeComputingResource": {
+            "anpu2": {
+                "npu:Ascend310P": 6,
+                "mem": "371.094 GiB",
+                "cpu": 128
+            },
+            "xcn1": {
+                "mem": "488.281 GiB",
+                "cpu": 40
+            },
+            "cn2": {
+                "mem": "488.281 GiB",
+                "cpu": 128
+            },
+            "cn1": {
+                "mem": "488.281 GiB",
+                "cpu": 128
+            },
+            "mx1": {
+                "mem": "1757.813 GiB",
+                "cpu": 64,
+                "metax_gpu:C500": 8
+            },
+            "cn4": {
+                "mem": "488.281 GiB",
+                "cpu": 128
+            },
+            "tgpu3": {
+                "tgpu:TG150": 16,
+                "mem": "927.734 GiB",
+                "cpu": 128
+            },
+            "cn3": {
+                "mem": "488.281 GiB",
+                "cpu": 128
+            },
+            "tgpu2": {
+                "tgpu:TG150": 16,
+                "mem": "927.734 GiB",
+                "cpu": 128
+            },
+            "cn6": {
+                "mem": "1953.125 GiB",
+                "cpu": 128
+            },
+            "tgpu1": {
+                "tgpu:TG150": 16,
+                "mem": "927.734 GiB",
+                "cpu": 128
+            },
+            "cn5": {
+                "mem": "1953.125 GiB",
+                "cpu": 128
+            },
+            "tgpu7": {
+                "tgpu:TG150": 16,
+                "mem": "927.734 GiB",
+                "cpu": 128
+            },
+            "npu2": {
+                "npu:Ascend910": 8,
+                "mem": "742.188 GiB",
+                "v_npu:v_Ascend910": 120,
+                "cpu": 192
+            },
+            "npu1": {
+                "npu:Ascend910": 8,
+                "mem": "742.188 GiB",
+                "v_npu:v_Ascend910": 120,
+                "cpu": 192
+            },
+            "tgpu6": {
+                "tgpu:TG150": 16,
+                "mem": "927.734 GiB",
+                "cpu": 128
+            },
+            "tgpu5": {
+                "tgpu:TG150": 16,
+                "mem": "927.734 GiB",
+                "cpu": 128
+            },
+            "tgpu4": {
+                "tgpu:TG150": 16,
+                "mem": "927.734 GiB",
+                "cpu": 128
+            },
+            "anpu1": {
+                "npu:Ascend310P": 6,
+                "mem": "371.094 GiB",
+                "cpu": 128
+            },
+            "gpu1": {
+                "mem": "488.281 GiB",
+                "gpu:A100": 2,
+                "cpu": 40
+            },
+            "gpu2": {
+                "mem": "488.281 GiB",
+                "gpu:A100": 2,
+                "cpu": 40
+            },
+            "gpu3": {
+                "mem": "488.281 GiB",
+                "gpu:A100": 4,
+                "cpu": 64
+            },
+            "gpu4": {
+                "mem": "488.281 GiB",
+                "gpu:A100": 4,
+                "cpu": 64
+            },
+            "gpu5": {
+                "mem": "488.281 GiB",
+                "gpu:A100": 4,
+                "cpu": 64
+            },
+            "gpu6": {
+                "mem": "488.281 GiB",
+                "gpu:A100": 4,
+                "cpu": 64
+            }
+        },
+        "nodeComputingResourceIdled": {
+            "anpu2": {
+                "npu:Ascend310P": 6,
+                "mem": "371.094 GiB",
+                "cpu": 128
+            },
+            "xcn1": {
+                "mem": "458.281 GiB",
+                "cpu": 0
+            },
+            "cn2": {
+                "mem": "488.281 GiB",
+                "cpu": 128
+            },
+            "cn1": {
+                "mem": "488.281 GiB",
+                "cpu": 128
+            },
+            "mx1": {
+                "mem": "1757.813 GiB",
+                "cpu": 64,
+                "metax_gpu:C500": 8
+            },
+            "cn4": {
+                "mem": "488.281 GiB",
+                "cpu": 128
+            },
+            "tgpu3": {
+                "tgpu:TG150": 16,
+                "mem": "927.734 GiB",
+                "cpu": 128
+            },
+            "cn3": {
+                "mem": "488.281 GiB",
+                "cpu": 128
+            },
+            "tgpu2": {
+                "tgpu:TG150": 16,
+                "mem": "927.734 GiB",
+                "cpu": 128
+            },
+            "cn6": {
+                "mem": "1953.125 GiB",
+                "cpu": 128
+            },
+            "tgpu1": {
+                "tgpu:TG150": 16,
+                "mem": "927.734 GiB",
+                "cpu": 128
+            },
+            "cn5": {
+                "mem": "1953.125 GiB",
+                "cpu": 128
+            },
+            "tgpu7": {
+                "tgpu:TG150": 16,
+                "mem": "927.734 GiB",
+                "cpu": 128
+            },
+            "npu2": {
+                "npu:Ascend910": 8,
+                "mem": "0.000 GiB",
+                "v_npu:v_Ascend910": 120,
+                "cpu": 12
+            },
+            "npu1": {
+                "npu:Ascend910": 8,
+                "mem": "0.000 GiB",
+                "v_npu:v_Ascend910": 120,
+                "cpu": 12
+            },
+            "tgpu6": {
+                "tgpu:TG150": 16,
+                "mem": "927.734 GiB",
+                "cpu": 128
+            },
+            "tgpu5": {
+                "tgpu:TG150": 16,
+                "mem": "927.734 GiB",
+                "cpu": 128
+            },
+            "tgpu4": {
+                "tgpu:TG150": 16,
+                "mem": "927.734 GiB",
+                "cpu": 128
+            },
+            "anpu1": {
+                "npu:Ascend310P": 6,
+                "mem": "371.094 GiB",
+                "cpu": 128
+            },
+            "gpu1": {
+                "mem": "296.281 GiB",
+                "gpu:A100": 0,
+                "cpu": 0
+            },
+            "gpu2": {
+                "mem": "488.281 GiB",
+                "gpu:A100": 2,
+                "cpu": 40
+            },
+            "gpu3": {
+                "mem": "360.281 GiB",
+                "gpu:A100": 2,
+                "cpu": 0
+            },
+            "gpu4": {
+                "mem": "235.281 GiB",
+                "gpu:A100": 0,
+                "cpu": 24
+            },
+            "gpu5": {
+                "mem": "168.281 GiB",
+                "gpu:A100": 1,
+                "cpu": 0
+            },
+            "gpu6": {
+                "mem": "359.781 GiB",
+                "gpu:A100": 2,
+                "cpu": 31
+            }
+        },
+        "partitionNode": {
+            "x86GPU": [
+                "gpu1",
+                "gpu2",
+                "gpu4",
+                "gpu5",
+                "gpu6"
+            ],
+            "x86Compute": [
+                "xcn1"
+            ],
+            "armCompute": [
+                "cn1",
+                "cn2",
+                "cn3",
+                "cn4"
+            ],
+            "armFatCompute": [
+                "cn5",
+                "cn6"
+            ],
+            "tszx_gpu_tg150": [
+                "tgpu1",
+                "tgpu2",
+                "tgpu3",
+                "tgpu4",
+                "tgpu5",
+                "tgpu6",
+                "tgpu7"
+            ],
+            "lixiaohai": [
+                "gpu3"
+            ],
+            "metax_gpu": [
+                "mx1"
+            ],
+            "inferenceNPU": [
+                "anpu1",
+                "anpu2"
+            ],
+            "trainingNPU": [
+                "npu1",
+                "npu2"
+            ]
+        },
+        "singleNodeMaxComputingResource": {
+            "tgpu:TG150": 16,
+            "npu:Ascend310P": 6,
+            "npu:Ascend910": 8,
+            "mem": "1953.125 GiB",
+            "v_npu:v_Ascend910": 120,
+            "gpu:A100": 4,
+            "cpu": 192,
+            "metax_gpu:C500": 8
+        }
+    },
+    "timestamp": 1767857168689
+}
+
+
+http://hpc.hutb.edu.cn/hpc-backend/task/pageList
+{
+  "success": true,
+  "message": "",
+  "code": 200,
+  "result": {
+    "records": [
+      {
+        "reason": null,
+        "outputDir": "/var/hpc-root/feng2/stress_test/out.log",
+        "signature": "",
+        "jobTasks": 0,
+        "sharedMem": null,
+        "source": "cmd",
+        "type": "normal",
+        "suspended": null,
+        "duration": "0秒",
+        "slurmJobId": "8608",
+        "createBy": "root",
+        "submitTime": "2025-09-16 10:21:26",
+        "errorDir": "/var/hpc-root/feng2/stress_test/err.log",
+        "partition": "x86GPU",
+        "nodes": "",
+        "name": "stress_test5.sh",
+        "startTime": null,
+        "nodeCount": 0,
+        "nodesFromCount": null,
+        "id": "1967775807359619074",
+        "endTime": "",
+        "detail": {
+          "job": {
+            "standard_output": "/var/hpc-root/feng2/stress_test/out.log",
+            "current_working_directory": "/var/hpc-root/feng2/stress_test",
+            "standard_error": "/var/hpc-root/feng2/stress_test/err.log",
+            "environment": [
+              "/var/hpc-root/feng2/stress_test"
+            ],
+            "partition": "x86GPU",
+            "nodes": "",
+            "get_user_environment": true,
+            "qos": "normal",
+            "user_id": "root",
+            "name": "stress_test5.sh",
+            "node_count": 1,
+            "user": "root",
+            "clusters": "fs_hpc",
+            "account": "root"
+          },
+          "script": "/var/hpc-root/feng2/stress_test/stress_test5.sh"
+        },
+        "mainDir": "/var/hpc-root/feng2/stress_test",
+        "status": "PENDING"
+      },
+      {
+        "reason": null,
+        "signature": "normal:65469adc6c0243ea8744106f6ad59b48",
+        "jobTasks": 1,
+        "sharedMem": null,
+        "source": "local",
+        "appCode": "hpc-pycharm",
+        "type": "app",
+        "duration": "0秒",
+        "slurmJobId": "8461",
+        "errorDir": "/var/hpc-root/c2983/logs/hpc-pycharm_c2983_2025-07-18-64071.error.8461.txt",
+        "partition": "x86GPU",
+        "startTime": null,
+        "nodeCount": 0,
+        "id": "1946145004614995969",
+        "mainDir": "/var/hpc-root/c2983",
+        "appTag": "pycharm_with_slurm_with_user_with_sudo",
+        "outputDir": "/var/hpc-root/c2983/logs/hpc-pycharm_c2983_2025-07-18-64071.out.8461.txt",
+        "suspended": null,
+        "createBy": "c2983",
+        "submitTime": "2025-07-18 17:48:21",
+        "nodes": "",
+        "name": "hpc-pycharm-c2983-2025-07-18-64102",
+        "nodesFromCount": true,
+        "endTime": "",
+        "detail": {
+          "job": {
+            "memory_per_node": {
+              "number": 131072,
+              "set": true,
+              "infinite": false
+            },
+            "time_limit": {
+              "number": 1440,
+              "set": true,
+              "infinite": false
+            },
+            "cpus_per_task": 64,
+            "standard_output": "/var/hpc-root/c2983/logs/hpc-pycharm_c2983_2025-07-18-64071.out.%j.txt",
+            "current_working_directory": "/var/hpc-root/c2983",
+            "standard_error": "/var/hpc-root/c2983/logs/hpc-pycharm_c2983_2025-07-18-64071.error.%j.txt",
+            "tres_per_node": "gres:gpu:A100:1",
+            "nodes_from_count": true,
+            "environment": [
+              "CPU=64",
+              "DEVICE_MOUNT_COUNT=1",
+              "GPU=1",
+              "DEVICE_MOUNT_TYPE=nvidia.com/gpu",
+              "HELM_REPO=helm-hpc-dev",
+              "HELM_REPO_ADDR=http://10.0.254.102:8081/repository/helm-hpc-dev/",
+              "NAMESPACE=hpc",
+              "CHART=hpc-pycharm",
+              "CHART_VERSION=2.1.1",
+              "TAG=pycharm_with_slurm_with_user_with_sudo",
+              "TAGINDEX=0",
+              "USERPASSWD=123456qwe",
+              "TRAEFIKHOST=hpc.hutb.edu.cn",
+              "REDIS_HOST=redis-master.redis",
+              "REDIS_PORT=6379",
+              "REDIS_JUICE_DB=1",
+              "REDIS_PASSWD=admin@123",
+              "USER_HOME_PREFIX=/var/hpc-root/",
+              "EXTERNAL_KUBE_CONFIG_FILEPATH=KUBE_FILEPATH",
+              "ENABLE_AUTH_MIDDLEWARE=true",
+              "AUTH_MIDDLEWARE_NAME=hpc-external-app-auth-middleware",
+              "IMAGE_PULL_POLICY=Always",
+              "ENABLE_SUDO=true",
+              "DEBUG=false",
+              "IMAGE=idocker.io/hpc/hpc_pycharm"
+            ],
+            "partition": "x86GPU",
+            "nodes": "1",
+            "get_user_environment": true,
+            "qos": "c2983",
+            "user_id": "c2983",
+            "name": "hpc-pycharm-c2983-2025-07-18-64102",
+            "comment": "normal:65469adc6c0243ea8744106f6ad59b48",
+            "node_count": 1,
+            "user": "c2983",
+            "clusters": "fs_hpc",
+            "account": "c2983",
+            "tasks": 1
+          },
+          "script": "#!/bin/bash \nsrun /var/hpc-root/.system/slurm-launch-k8s-app.sh"
+        },
+        "resourceUsed": {
+          "computingResource": {
+            "name": "gpu:A100",
+            "value": 1
+          },
+          "mem": "128 GiB",
+          "gpu:A100": 1,
+          "cpu": 64
+        },
+        "status": "PENDING"
+      }
+    ],
+    "total": 2,
+    "size": 10,
+    "current": 1,
+    "orders": [],
+    "optimizeCountSql": true,
+    "searchCount": true,
+    "countId": null,
+    "maxLimit": null,
+    "pages": 1
+  },
+  "timestamp": 1767920248741
+}
