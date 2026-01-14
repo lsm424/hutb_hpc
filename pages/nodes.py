@@ -9,6 +9,27 @@ from common import utils
 
 dash.register_page(__name__, path='/nodes', name='节点管理')
 
+
+# 回到顶部按钮样式
+back_to_top_style_hidden = {
+    'position': 'fixed',
+    'bottom': '30px',
+    'right': '30px',
+    'zIndex': 1000,
+    'width': '50px',
+    'height': '50px',
+    'borderRadius': '50%',
+    'backgroundColor': '#007bff',
+    'color': 'white',
+    'border': 'none',
+    'fontSize': '24px',
+    'cursor': 'pointer',
+    'boxShadow': '0 2px 10px rgba(0,0,0,0.2)',
+    'opacity': 0,  # 初始透明
+    'visibility': 'hidden',  # 初始隐藏
+    'transition': 'all 0.3s ease'
+}
+
 period2days = {
     '1w': 7,
     '1m': 30,
@@ -185,12 +206,12 @@ layout = html.Div([
         
         # 回到顶部按钮
         html.Button(
-            html.I(className="fa-solid fa-arrow-up"),
-            id='scroll-to-top-btn',
-            n_clicks=0,
-            className="fixed bottom-8 right-8 w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 z-50 flex items-center justify-center",
-            # style={'opacity': '0', 'pointer-events': 'none', 'transition': 'opacity 0.3s, transform 0.3s'}
-        )
+            "↑",
+            id="back-to-top",
+            style=back_to_top_style_hidden,
+            title="回到顶部",
+            n_clicks=0
+        ),
     ], className="p-6 pb-96", id='nodes-content')
 ])
 
@@ -199,7 +220,14 @@ layout = html.Div([
 
 clientside_callback(
     '''
-    function scrollToAnchor(node_id) {
+    function scrollToAnchor(node_id, back_to_top_n_clicks) {
+        if (back_to_top_n_clicks) {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+            return '';
+        }
         var anchor = document.getElementById('node-detail-panel-anchor');
         if (anchor) {
             setTimeout(function() {
@@ -228,7 +256,36 @@ clientside_callback(
     }
     ''',
     Output('node-detail-panel-anchor', 'children'),
-    Input('selected-node-store', 'data')
+    Input('selected-node-store', 'data'),
+    Input('back-to-top', 'n_clicks')
+)
+
+clientside_callback(
+    """
+    function() {
+        const backButton = document.getElementById('back-to-top');
+        
+        function handleScroll() {
+            if (window.scrollY > 300) {
+                backButton.style.opacity = 1;
+                backButton.style.visibility = 'visible';
+            } else {
+                backButton.style.opacity = 0;
+                backButton.style.visibility = 'hidden';
+            }
+        }
+        
+        // 添加滚动监听
+        window.addEventListener('scroll', handleScroll);
+        
+        // 初始检查
+        handleScroll();
+        
+        return window.dash_clientside.no_update;
+    }
+    """,
+    Output('back-to-top', 'n_clicks'),
+    Input('url', 'pathname')
 )
 
 @callback(
@@ -349,6 +406,7 @@ def handle_card_click(n_clicks):
     # 返回选中的节点ID、hash锚点和滚动触发器
     # 使用时间戳作为触发器，确保每次点击都会触发滚动
     return node_id, '#node-detail-panel-anchor', time.time()
+
 
 @callback(
     Output('chart-period-store', 'data'),

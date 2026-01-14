@@ -88,7 +88,22 @@ layout = html.Div([
                 style={'backgroundColor': '#1f2937', 'border': '1px solid #374151', 'color': '#fff'}
             )
         ], className="flex items-center")
-    ], className="h-16 bg-gray-900/50 backdrop-blur border-b border-gray-800 flex items-center justify-between px-6 sticky top-0 z-40"),
+        # className 详细释义:
+        # h-16              高度为4rem (Tailwind)
+        # bg-gray-900/50    背景为灰色900，透明度50%
+        # backdrop-blur     应用背景模糊（毛玻璃效果）
+        # border-b          下边框
+        # border-gray-800   边框为灰色800
+        # flex              使用flex布局
+        # items-center      纵向居中排列
+        # justify-between   主轴两端对齐（左右分散）
+        # px-6              x方向内边距1.5rem
+        # sticky            粘性定位
+        # top-0             距顶部0px（与sticky配合，实现吸顶）
+        # z-40              z-index为40，防止被其它元素遮挡
+        ],
+        className="h-16 bg-gray-900/50 backdrop-blur border-b border-gray-800 flex items-center justify-between px-6 sticky top-0 z-40",
+    ),
 
     html.Div([
         # Hero Section
@@ -198,7 +213,11 @@ layout = html.Div([
             ], className="flex flex-col gap-6")
         ], className="bg-gray-900 rounded-xl p-6 border border-gray-800")
 
-    ], className="p-6 space-y-6")
+    # className="p-6 space-y-6" 是 Tailwind CSS 的类名组合，用于给这个最外层 <div> 添加样式，含义如下：
+    # - p-6    ：为容器的所有内边距（padding）设置为 1.5rem (24px)
+    # - space-y-6 ：让子元素之间（垂直方向）自动有 1.5rem (24px) 的间隔
+
+    ], className="p-6")
 ])
 
 # --- Callbacks ---

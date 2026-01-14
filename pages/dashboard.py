@@ -45,25 +45,9 @@ layout = html.Div([
                 html.H1("分区资源总览", className="text-2xl font-semibold"),
                 html.P("近实时刷新，快速洞察CPU/内存/GPU利用率。", className="text-gray-300")
             ], className="space-y-2")
-        ], className="absolute inset-0 flex items-center px-6 bg-gradient-to-r from-gray-900/80 to-transparent")
-    ], className="relative rounded-xl overflow-hidden mb-6"),
-
-    # User Stats Section
-    html.Section([
+        ], className="absolute inset-0 flex items-center px-6 bg-gradient-to-r from-gray-900/80 to-transparent"),
+                    
         html.Div([
-            # html.Label("时间窗口", className="text-xs text-gray-400 mr-3"),
-            # dcc.Dropdown(
-            #     id='timewin-dropdown',
-            #     options=[
-            #         {'label': '5分钟', 'value': 5},
-            #         {'label': '15分钟', 'value': 15},
-            #         {'label': '30分钟', 'value': 30}
-            #     ],
-            #     value=15,
-            #     clearable=False,
-            #     className="text-gray-200 bg-gray-800 border-gray-700 w-32",
-            #     style={'backgroundColor': '#1f2937', 'border': '1px solid #374151', 'color': '#fff'} # Inline style to override default Dash dropdown
-            # ),
             html.Div([
                 html.Div([
                     html.Div(hpc_manager.total_user, id='total-users', className="text-2xl font-semibold"),
@@ -72,10 +56,15 @@ layout = html.Div([
                 html.Div([
                     html.Div(hpc_manager.user_active, id='online-users', className="text-2xl font-semibold text-emerald-400"),
                     html.Div(["在线用户数"], className="text-xs text-gray-400")
-                ], className="text-right")
-            ], className="ml-auto grid grid-cols-2 gap-12")
-        ], className="flex items-center")
-    ], className="bg-gray-900 rounded-xl p-6 border border-gray-800 mb-6"),
+                ], className="text-right"),
+            ], className="flex flex-row gap-8"),
+        ], className="flex flex-col gap-2 absolute right-8 top-1/2 -translate-y-1/2"),
+    # className 参数设置了 Tailwind CSS 的样式类：
+    # - relative: 设为相对定位，为后代的绝对定位元素布局提供参考。
+    # - rounded-xl: 大圆角边框。
+    # - overflow-hidden: 超出容器部分隐藏，防止溢出（如图片圆角）。
+    # - mb-6: 下外边距为 1.5rem（24px）。
+    ], className="relative rounded-xl overflow-hidden "),
 
     # Partitions Grid Section
     html.Section([
