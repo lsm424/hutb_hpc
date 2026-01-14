@@ -1,11 +1,20 @@
 ﻿import dash
-from dash import html, dcc, Input, Output, State, callback, ALL, MATCH, ctx
+from dash import html, dcc, Input, Output, State, callback, ALL, MATCH, ctx, ClientsideFunction
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import random
 from datetime import datetime, timedelta
+from service.hpc_manager import Node, hpc_manager
+from common import utils
 
 dash.register_page(__name__, path='/nodes', name='节点管理')
+
+period2days = {
+    '1w': 7,
+    '1m': 30,
+    '3m': 90,
+    '6m': 180,
+}
 
 def gen_nodes():
     return [
@@ -19,19 +28,20 @@ def gen_nodes():
 
 ALL_NODES = gen_nodes()
 
-def create_chart(title, color, period='1w'):
-    count = 7 if period == '1w' else 30 if period == '1m' else 12 if period == '3m' else 24
-    end_date = datetime.now()
-    if period == '1w':
-        x = [(end_date - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(count)][::-1]
-    elif period == '1m':
-        x = [(end_date - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(count)][::-1]
-    elif period == '3m':
-        x = [(end_date - timedelta(weeks=i)).strftime('%Y-%m-%d') for i in range(count)][::-1]
-    else:
-        x = [(end_date - timedelta(weeks=i)).strftime('%Y-%m-%d') for i in range(count)][::-1]
+def create_chart(title, color, history):
+    # count = 7 if period == '1w' else 30 if period == '1m' else 12 if period == '3m' else 24
+    # end_date = datetime.now()
+    # if period == '1w':
+    #     x = [(end_date - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(count)][::-1]
+    # elif period == '1m':
+    #     x = [(end_date - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(count)][::-1]
+    # elif period == '3m':
+    #     x = [(end_date - timedelta(weeks=i)).strftime('%Y-%m-%d') for i in range(count)][::-1]
+    # else:
+    #     x = [(end_date - timedelta(weeks=i)).strftime('%Y-%m-%d') for i in range(count)][::-1]
 
-    y = [random.randint(20, 80) for _ in range(count)]
+    x = [datetime.fromtimestamp(x['timestamp']) for x in history]
+    y = [x.get('cpu_usage', None) or x.get('mem_usage', None) or x.get('gpu_usage', None) * 100 for x in history]
     
     fig = go.Figure(data=[go.Scatter(
         x=x, y=y,
@@ -88,10 +98,10 @@ layout = html.Div([
                     id='node-part-filter',
                     options=[
                         {'label': 'all', 'value': 'all'},
-                        {'label': 'gpu-a', 'value': 'gpu-a'},
-                        {'label': 'cpu-b', 'value': 'cpu-b'},
-                        {'label': 'mem-c', 'value': 'mem-c'}
-                    ],
+                        # {'label': 'gpu-a', 'value': 'gpu-a'},
+                        # {'label': 'cpu-b', 'value': 'cpu-b'},
+                        # {'label': 'mem-c', 'value': 'mem-c'}
+                    ] + [{'label': p, 'value': p} for p in hpc_manager.partitions.keys()],
                     value='all',
                     clearable=False,
                     className="mt-1 w-32"
@@ -113,10 +123,13 @@ layout = html.Div([
                 )
             ]),
             html.Div(className="flex-1"),
-            html.Button([html.I(className="fa-solid fa-filter mr-1"), "筛选"], id='btn-node-filter', className="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm text-gray-300"),
+            # html.Button([html.I(className="fa-solid fa-filter mr-1"), "筛选"], id='btn-node-filter', className="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm text-gray-300"),
         ], className="flex flex-wrap gap-3 items-end mb-6"),
         
         html.Div(id='nodes-grid', className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"),
+        
+        # 锚点 div，用于跳转到详情面板（始终可见，即使详情面板是 hidden）
+        html.Div(id='node-detail-panel-anchor', style={'scroll-margin-top': '20px'}),
         
         html.Div(id='node-detail-panel', className="hidden bg-gray-900 border border-gray-800 rounded-xl p-6 animate-fade-in-up", children=[
             html.Div([
@@ -167,125 +180,137 @@ layout = html.Div([
                     ], className="w-full text-xs")
                 ], className="overflow-hidden border border-gray-800 rounded-lg")
             ])
-        ])
-    ], className="p-6 pb-96")
+        ]),
+        
+        # 回到顶部按钮
+        html.Button(
+            html.I(className="fa-solid fa-arrow-up"),
+            id='scroll-to-top-btn',
+            n_clicks=0,
+            className="fixed bottom-8 right-8 w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 z-50 flex items-center justify-center",
+            style={'opacity': '0', 'pointer-events': 'none', 'transition': 'opacity 0.3s, transform 0.3s'}
+        )
+    ], className="p-6 pb-96", id='nodes-content')
 ])
+
+# 注意：滚动到详情面板功能已改为使用 URL hash 锚点 (#node-detail-panel-anchor)
+# 点击卡片时会自动更新 URL hash，浏览器会自动滚动到锚点位置
 
 @callback(
     [Output('nodes-grid', 'children'),
-     Output('nodes-badges', 'children')],
-    [Input('btn-node-filter', 'n_clicks'),
-     Input('nodes-url', 'search'),
-     Input('selected-node-store', 'data')],
-    [State('node-part-filter', 'value'),
-     State('node-health-filter', 'value')]
+     Output('nodes-badges', 'children'),
+     Output('node-part-filter', 'value')],
+    [Input('nodes-url', 'search'),
+     Input('selected-node-store', 'data'),
+    Input('node-part-filter', 'value'),
+    Input('node-health-filter', 'value')
+    ]
 )
-def update_node_grid(n, search, selected_id, part_filter, health_filter):
-    params = {}
-    if search:
-        search = search.lstrip('?')
-        for pair in search.split('&'):
-            if '=' in pair:
-                key, val = pair.split('=')
-                params[key] = val
+def update_node_grid(search, selected_id, part_filter, health_filter):
+    params = utils.search_params(search)
     
-    url_part = params.get('part')
-    url_job = params.get('job')
+    url_part = params.get('partition')
+    url_node = params.get('node')
     
     badges = []
     if url_part:
         badges.append(html.Span(f"分区: {url_part}", className="px-2 py-0.5 bg-indigo-900/50 text-indigo-300 rounded text-xs border border-indigo-700/50"))
-    if url_job:
-        badges.append(html.Span(f"作业: {url_job}", className="px-2 py-0.5 bg-indigo-900/50 text-indigo-300 rounded text-xs border border-indigo-700/50"))
+    if url_node:
+        badges.append(html.Span(f"节点: {url_node}", className="px-2 py-0.5 bg-indigo-900/50 text-indigo-300 rounded text-xs border border-indigo-700/50"))
         
-    filtered_nodes = ALL_NODES
+    filtered_nodes = Node.nodes_info
     target_part = url_part if url_part else (part_filter if part_filter != 'all' else None)
     
     if target_part:
-        filtered_nodes = [n for n in filtered_nodes if n['part'] == target_part]
+        filtered_nodes = [n for n in filtered_nodes if n.partition.partition_name == target_part]
     if health_filter != 'all':
-        filtered_nodes = [n for n in filtered_nodes if n['health'] == health_filter]
-    if url_job:
-        filtered_nodes = [n for n in filtered_nodes if url_job in n['jobs']]
+        filtered_nodes = [n for n in filtered_nodes if n.health == health_filter]
+    if url_node:
+        filtered_nodes = [n for n in filtered_nodes if n.node == url_node]
+        if filtered_nodes:
+            part_filter = filtered_nodes[0].partition.partition_name
         
     cards = []
     if not filtered_nodes:
         return html.Div("无匹配节点数据", className="col-span-full text-center py-12 text-gray-500"), badges
         
     for n in filtered_nodes:
-        is_selected = (selected_id == n['id'])
+        is_selected = (selected_id == n.node)
         selected_class = "selected bg-gray-800/50 ring-2 ring-indigo-500/50" if is_selected else ""
         
-        cpu_pct = round((1 - n['cpu']['free'] / n['cpu']['total']) * 100)
-        mem_pct = round((1 - n['mem']['free'] / n['mem']['total']) * 100)
-        gpu_pct = round((1 - n['gpu']['free'] / n['gpu']['total']) * 100) if n['gpu']['total'] > 0 else 0
+        # cpu_pct = round((1 - n['cpu']['free'] / n['cpu']['total']) * 100)
+        # mem_pct = round((1 - n['mem']['free'] / n['mem']['total']) * 100)
+        # gpu_pct = round((1 - n['gpu']['free'] / n['gpu']['total']) * 100) if n['gpu']['total'] > 0 else 0
         
         health_color = {
             '健康': 'border-emerald-500/20 text-emerald-400 bg-emerald-500/10',
             '告警': 'border-yellow-500/20 text-yellow-400 bg-yellow-500/10',
             '离线': 'border-gray-700 text-gray-400 bg-gray-800'
-        }.get(n['health'], 'border-gray-700 text-gray-400 bg-gray-800')
+        }.get(n.health, 'border-gray-700 text-gray-400 bg-gray-800')
         
         card = html.Div([
             html.Div([
                 html.Div([
                     html.Div(html.I(className="fa-solid fa-server"), className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center text-gray-400 group-hover:bg-indigo-500/10 group-hover:text-indigo-400 transition-colors"),
                     html.Div([
-                        html.H3(n['id'], className="font-medium"),
-                        html.Div(n['part'], className="text-xs text-gray-500")
+                        html.H3(f'{n.node} ({n.partition.partition_name})', className="font-medium"),
+                        html.Div(f'{n.ip} ({n.cabinet})', className="text-xs text-gray-500")
                     ])
                 ], className="flex items-center gap-3"),
-                html.Span(n['health'], className=f"text-xs px-2 py-0.5 rounded border {health_color}")
+                html.Span(n.health, className=f"text-xs px-2 py-0.5 rounded border {health_color}")
             ], className="flex items-center justify-between mb-4"),
             
             html.Div([
                 html.Div([
                     html.I(className="fa-solid fa-microchip text-purple-400 w-4"),
-                    html.Span(f"CPU：总 {n['cpu']['total']} / 剩余 {n['cpu']['free']}"),
-                    html.Div(html.Div(style={'width': f'{cpu_pct}%'}, className="h-full bg-purple-500"), className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden ml-1")
+                    html.Span(f"CPU：总 {n.cpu} / 剩余 {n.idled_cpu}"),
+                    html.Div(html.Div(style={'width': f'{n.cpu_util_pct}%'}, className="h-full bg-purple-500"), className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden ml-1")
                 ], className="flex items-center gap-2"),
                 html.Div([
                     html.I(className="fa-solid fa-memory text-blue-400 w-4"),
-                    html.Span(f"内存：总 {n['mem']['total']}GB / 剩余 {n['mem']['free']}GB"),
-                    html.Div(html.Div(style={'width': f'{mem_pct}%'}, className="h-full bg-blue-500"), className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden ml-1")
+                    html.Span(f"内存：总 {n.memory}GB / 剩余 {n.idled_mem}GB"),
+                    html.Div(html.Div(style={'width': f'{n.mem_util_pct}%'}, className="h-full bg-blue-500"), className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden ml-1")
                 ], className="flex items-center gap-2"),
                 html.Div([
                     html.I(className="fa-solid fa-square text-emerald-400 w-4"),
-                    html.Span(f"GPU：总 {n['gpu']['total']} / 剩余 {n['gpu']['free']}"),
-                    html.Div(html.Div(style={'width': f'{gpu_pct}%'}, className="h-full bg-emerald-500"), className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden ml-1")
+                    html.Span(f"GPU：总 {n.card} / 剩余 {n.idled_card}"),
+                    html.Div(html.Div(style={'width': f'{n.gpu_util_pct}%'}, className="h-full bg-emerald-500"), className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden ml-1")
                 ], className="flex items-center gap-2"),
             ], className="space-y-3 text-sm mb-5"),
             
             html.Div([
-                html.Span(["运行作业: ", html.Span(str(len(n['jobs'])), className="text-white font-medium")])
+                html.Span(["运行作业: ", html.Span(str(len(list(filter(lambda x: x.get('status') == '运行中', n.tasks)))), className="text-white font-medium")])
             ], className="flex items-center justify-between pt-4 border-t border-gray-800 text-xs text-gray-400 mb-4"),
             
             html.Div([
-                dcc.Link("查看作业", href=f"/jobs?node={n['id']}", className="flex-1 text-center text-xs px-3 py-2 rounded border border-gray-700 hover:bg-gray-800 hover:text-white text-gray-400 transition-colors"),
-                dcc.Link("查看分区", href=f"/?part={n['part']}", className="flex-1 text-center text-xs px-3 py-2 rounded border border-gray-700 hover:bg-gray-800 hover:text-white text-gray-400 transition-colors")
+                dcc.Link("查看作业", href=f"/jobs?node={n.node}", className="flex-1 text-center text-xs px-3 py-2 rounded border border-gray-700 hover:bg-gray-800 hover:text-white text-gray-400 transition-colors"),
+                dcc.Link("查看分区", href=f"/?partition={n.partition.partition_name}", className="flex-1 text-center text-xs px-3 py-2 rounded border border-gray-700 hover:bg-gray-800 hover:text-white text-gray-400 transition-colors")
             ], className="flex gap-2")
         ], 
-        id={'type': 'node-card', 'index': n['id']},
+        id={'type': 'node-card', 'index': n.node},
         n_clicks=0,
         className=f"node-card cursor-pointer rounded-xl border border-gray-800 bg-gray-900 hover:border-gray-700 transition p-5 group {selected_class}")
         cards.append(card)
         
-    return cards, badges
+    return cards, badges, part_filter
 
 @callback(
-    Output('selected-node-store', 'data'),
+    [Output('selected-node-store', 'data'),
+     Output('nodes-url', 'hash')],
     Input({'type': 'node-card', 'index': ALL}, 'n_clicks'),
     prevent_initial_call=True
 )
 def handle_card_click(n_clicks):
     if not any(n_clicks):
-        return dash.no_update
+        return dash.no_update, dash.no_update
     
     ctx_triggered = ctx.triggered_id
     if not ctx_triggered:
-        return dash.no_update
-        
-    return ctx_triggered['index']
+        return dash.no_update, dash.no_update
+    
+    node_id = ctx_triggered['index']
+    # 返回选中的节点ID和hash锚点，跳转到详情面板上方的锚点div（始终可见）
+    return node_id, '#node-detail-panel-anchor'
 
 @callback(
     Output('chart-period-store', 'data'),
@@ -323,23 +348,24 @@ def update_detail_panel(selected_id, period):
     if not selected_id:
         return btn_classes, "hidden", "", [], {}, {}, {}
         
-    node = next((n for n in ALL_NODES if n['id'] == selected_id), None)
+    node = next((n for n in Node.nodes_info if n.node == selected_id), None)
     if not node:
         return btn_classes, "hidden", "", [], {}, {}, {}
         
     gpu_rows = []
-    if node['gpu']['total'] == 0:
+    if node.card == 0:
         gpu_rows.append(html.Tr(html.Td("无GPU资源", colSpan=5, className="px-3 py-4 text-center text-gray-500")))
     else:
-        for i in range(node['gpu']['total']):
-            usage = random.randint(10, 99)
-            temp = random.randint(40, 85)
+        # gpu_history = node.get_history('GPU', period2days[period])
+        gpu_infos = node.gpu_info
+        for idx, gpu_info in gpu_infos.items():
+            usage = gpu_info['usedRatio']
+            temp = int(gpu_info['temperature'])
             temp_color = "text-red-400" if temp > 75 else "text-yellow-400" if temp > 60 else "text-emerald-400"
-            
             row = html.Tr([
-                html.Td(f"GPU-{i}", className="px-3 py-2 text-gray-300"),
-                html.Td("NVIDIA A100", className="px-3 py-2 text-gray-400"),
-                html.Td("72G / 80G", className="px-3 py-2 text-gray-400"),
+                html.Td(f"{idx}", className="px-3 py-2 text-gray-300"),
+                html.Td(gpu_info['name'], className="px-3 py-2 text-gray-400"),
+                html.Td(f"{gpu_info['memUsed']} / {gpu_info['mem']}", className="px-3 py-2 text-gray-400"),
                 html.Td([
                     html.Div(html.Div(style={'width': f'{usage}%'}, className="h-full bg-emerald-500"), className="w-16 h-2 bg-gray-800 rounded-full overflow-hidden inline-block align-middle mr-2"),
                     f"{usage}%"
@@ -348,9 +374,9 @@ def update_detail_panel(selected_id, period):
             ], className="hover:bg-gray-800/50")
             gpu_rows.append(row)
             
-    gpu_fig = create_chart("GPU", "#6366f1", period)
-    cpu_fig = create_chart("CPU", "#a855f7", period)
-    mem_fig = create_chart("MEM", "#3b82f6", period)
+    gpu_fig = create_chart("GPU", "#6366f1", node.get_history('GPU', period2days[period]))
+    cpu_fig = create_chart("CPU", "#a855f7", node.get_history('CPU', period2days[period]))
+    mem_fig = create_chart("MEM", "#3b82f6", node.get_history('Memory', period2days[period]))
     
     return btn_classes, "bg-gray-900 border border-gray-800 rounded-xl p-6 animate-fade-in-up", f"{selected_id} 详情", gpu_rows, gpu_fig, cpu_fig, mem_fig
 

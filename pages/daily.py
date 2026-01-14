@@ -4,17 +4,15 @@ import dash_bootstrap_components as dbc
 import dash_ag_grid as dag
 from datetime import datetime, timedelta
 import random
+from service.hpc_manager import hpc_manager
 
 dash.register_page(__name__, path='/daily', name='日报')
 
 # --- Mock Data Generators ---
 
 def get_dates():
-    dates = []
-    today = datetime.now()
-    for i in range(7):
-        date = today - timedelta(days=i)
-        dates.append({"label": date.strftime("%Y-%m-%d"), "value": date.strftime("%Y-%m-%d")})
+    dates = hpc_manager.get_daily_report_days()
+    dates = list(map(lambda x: {"label": x, "value": x}, dates))
     return dates
 
 def generate_partition_stats(date_str):
@@ -72,6 +70,7 @@ def generate_queued_jobs(date_str):
 
 layout = html.Div([
     # Header (Sticky)
+    # dbc.Location(id='daily-location', refresh=False),
     html.Header([
         html.Div([
             html.I(className="fa-solid fa-location-dot mr-2"),
@@ -82,8 +81,8 @@ layout = html.Div([
             html.Label("日期", className="text-xs text-gray-400 mr-2"),
             dcc.Dropdown(
                 id='daily-date-picker',
-                options=get_dates(),
-                value=get_dates()[0]['value'],
+                # options=get_dates(),
+                # value=get_dates()[0]['value'],
                 clearable=False,
                 className="w-40 text-sm",
                 style={'backgroundColor': '#1f2937', 'border': '1px solid #374151', 'color': '#fff'}
@@ -116,18 +115,21 @@ layout = html.Div([
             dag.AgGrid(
                 id="daily-resource-grid",
                 columnDefs=[
-                    {"headerName": "分区", "field": "partition", "sortable": True},
-                    {"headerName": "运行作业", "field": "total_jobs", "sortable": True},
-                    {"headerName": "排队作业", "field": "queued_jobs", "sortable": True},
-                    {"headerName": "成功率", "field": "success_rate"},
-                    {"headerName": "CPU分配", "field": "cpu_alloc"},
-                    {"headerName": "GPU分配", "field": "gpu_alloc"},
-                    {"headerName": "节点状态 (正常/总)", "field": "nodes_status"}
+                    {"headerName": "分区", "field": "partition", "sortable": True, 'flex': 1.5},
+                    {"headerName": "运行作业", "field": "total_jobs", "sortable": True, 'flex': 1.1, },
+                    {"headerName": "排队作业", "field": "queued_jobs", "sortable": True, 'flex': 1.1,},
+                    # {"headerName": "成功率", "field": "success_rate", "sortable": True, 'flex': 1.1,},
+                    {"headerName": "CPU分配", "field": "cpu_alloc", "sortable": True, 'flex': 1.1,},
+                    {"headerName": "GPU分配", "field": "gpu_alloc", "sortable": True, 'flex': 1.1,},
+                    {"headerName": "节点状态 (正常/总)", "field": "nodes_status", "sortable": True, 'flex': 1.1,},
                 ],
-                defaultColDef={"flex": 1, "minWidth": 100, "resizable": True},
-                style={"height": "250px", "width": "100%"},
+                defaultColDef={"resizable": True, "cellStyle": {"textAlign": "center"}, 
+                   },
                 className="ag-theme-alpine-dark",
-                dashGridOptions={"domLayout": "autoHeight"}
+                dashGridOptions={
+                    "domLayout": "normal",
+                    # "headerHeight": 32
+                }
             )
         ], className="bg-gray-900 rounded-xl p-6 border border-gray-800"),
 
@@ -163,17 +165,17 @@ layout = html.Div([
                     dag.AgGrid(
                         id="daily-abnormal-nodes-grid",
                         columnDefs=[
-                            {"headerName": "节点ID", "field": "node_id", "sortable": True, "cellClass": "font-mono"},
-                            {"headerName": "所属分区", "field": "partition"},
-                            {"headerName": "状态", "field": "status", "cellStyle": {'color': '#ef4444'}},
-                            {"headerName": "原因", "field": "reason"},
-                            {"headerName": "持续时间", "field": "duration"}
+                            {"headerName": "节点ID", "field": "node_id", "sortable": True, "cellClass": "font-mono", 'headerClass': 'header-center', 'flex': 1},
+                            {"headerName": "所属分区", "field": "partition", 'headerClass': 'header-center', 'flex': 1},
+                            {"headerName": "状态", "field": "status", "cellStyle": {'color': '#ef4444'}, 'flex': 1, 'headerClass': 'header-center'},
+                            {"headerName": "原因", "field": "reason", 'flex': 2, 'headerClass': 'header-center'},
+                            # {"headerName": "持续时间", "field": "duration"}
                         ],
-                        defaultColDef={"flex": 1},
+                        defaultColDef={"flex": 1, "cellStyle": {"textAlign": "center"},},
                         style={"height": "300px"},
                         className="ag-theme-alpine-dark"
                     )
-                ]),
+                ], className="mb-6"),
                 
                 # Queued Jobs
                 html.Div([
@@ -181,25 +183,33 @@ layout = html.Div([
                     dag.AgGrid(
                         id="daily-queued-jobs-grid",
                         columnDefs=[
-                            {"headerName": "作业ID", "field": "job_id", "cellClass": "font-mono"},
-                            {"headerName": "用户", "field": "user"},
-                            {"headerName": "分区", "field": "partition"},
-                            {"headerName": "提交时间", "field": "submit_time"},
-                            {"headerName": "等待时间", "field": "wait_time"},
-                            {"headerName": "排队原因", "field": "reason"}
+                            {"headerName": "作业ID", "field": "job_id", "cellClass": "font-mono", 'headerClass': 'header-center', 'flex': 1},
+                            {"headerName": "用户", "field": "user", 'headerClass': 'header-center', 'flex': 1},
+                            {"headerName": "分区", "field": "partition", 'headerClass': 'header-center', 'flex': 1},
+                            {"headerName": "申请资源", "field": "resource", 'headerClass': 'header-center', 'flex': 1.9},
+                            {"headerName": "提交时间", "field": "submit_time", 'headerClass': 'header-center', 'flex': 1.9},
+                            {"headerName": "等待时间", "field": "wait_time", 'headerClass': 'header-center', 'flex': 1.5},
                         ],
-                        defaultColDef={"flex": 1},
+                        defaultColDef={"flex": 1, "cellStyle": {"textAlign": "center"}},
                         style={"height": "300px"},
                         className="ag-theme-alpine-dark"
                     )
                 ])
-            ], className="grid grid-cols-1 lg:grid-cols-2 gap-6")
+            ], className="flex flex-col gap-6")
         ], className="bg-gray-900 rounded-xl p-6 border border-gray-800")
 
     ], className="p-6 space-y-6")
 ])
 
 # --- Callbacks ---
+
+@callback(
+    [Output("daily-date-picker", "value"), Output('daily-date-picker', 'options')],
+    [Input("url", "pathname")]
+)
+def update_daily_location(pathname):
+    dates = get_dates()
+    return dates[0]['value'], dates
 
 @callback(
     [Output("daily-resource-grid", "rowData"),
@@ -211,17 +221,21 @@ layout = html.Div([
     [Input("daily-date-picker", "value")]
 )
 def update_daily_report(selected_date):
+    statistic_data = hpc_manager.get_daily_statistic(selected_date)
     # 1. Resource Stats
-    resource_data = generate_partition_stats(selected_date)
+    resource_data = statistic_data.get('partition_info', []) # generate_partition_stats()
     
     # 2. User Stats
-    user_data = generate_user_stats(selected_date)
+    user_data = {
+        "total_users": statistic_data.get('total_users', 0),
+        "online_users": statistic_data.get('online_users', 0)
+    }  # generate_user_stats(selected_date)
     
     # 3. Abnormal Nodes
-    abnormal_nodes = generate_abnormal_nodes(selected_date)
+    abnormal_nodes = statistic_data.get('exception_nodes', []) # generate_abnormal_nodes(selected_date)
     
     # 4. Queued Jobs
-    queued_jobs = generate_queued_jobs(selected_date)
+    queued_jobs = statistic_data.get('queuing_jobs', []) # generate_queued_jobs(selected_date)
     
     return (
         resource_data,

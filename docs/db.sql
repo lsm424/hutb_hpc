@@ -1,0 +1,40 @@
+
+create table t_node_cpu_history_info (
+    `id` int(11) not null auto_increment,
+    `node` varchar(255) not null default '' comment '节点名称',
+    `timestamp` int(11) not null comment '时间戳',
+    `cpu_usage` float not null,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    primary key (`id`),
+    INDEX node_idx (node),
+    UNIQUE (node, timestamp),
+    INDEX timestamp_idx (timestamp)
+) COMMENT='节点CPU历史信息表';
+
+create table t_node_mem_history_info (
+    `id` int(11) not null auto_increment,
+    `node` varchar(255) not null default '' comment '节点名称',
+    `timestamp` int(11) not null comment '时间戳',
+    `mem_usage` float not null,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    primary key (`id`),
+    INDEX node_idx (node),
+    UNIQUE (node, timestamp),
+    INDEX timestamp_idx (timestamp)
+) COMMENT='节点内存历史信息表';
+
+create table t_daily_report_info (
+    `id` int(11) not null auto_increment,
+    `date` varchar(64) not null comment '日期',
+    `total_users` int(11) not null comment '总用户数',
+    `online_users` int(11) not null comment '在线用户数',
+    `exception_nodes` json comment '异常节点列表',
+    `queuing_jobs` json comment '排队中的任务',
+    `partition_info` json comment '分区信息',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    primary key (`id`),
+    unique key (date)
+) comment='日报';

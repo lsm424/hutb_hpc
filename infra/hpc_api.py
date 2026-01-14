@@ -37,7 +37,7 @@ class HpcApi:
         self.signature = signature
         self.session = requests.Session()
         if os.path.exists('assets/token.txt'):
-            token = open('assets/token.txt', 'r').read()
+            token = open('assets/token.txt', 'r').read().strip()
             self.session.headers['Cookie'] = f'X-Access-Token={token}'
         self.lock = threading.Lock()
 
@@ -55,7 +55,9 @@ class HpcApi:
             if response.status_code != 200:
                 logger.error(f"登录失败，状态码：{response.status_code}，响应内容：{response.text}")
             with open('assets/token.txt', 'w+') as f:
-                f.write(response.json()['result']['token'])
+                token = response.json()['result']['token']
+                self.session.headers['Cookie'] = f'X-Access-Token={token}'
+                f.write(token)
         except Exception as e:
             logger.error(f"登录请求异常：{e}")
             
@@ -96,7 +98,7 @@ class HpcApi:
             'order': 'desc',
             'pageNo': page_no,
             'pageSize': pagesize,
-            'status': status,
+            'status': '',
             'all': 'true',
             'timeColumn': 'startTime',
             '_t': int(time.time() * 1000),

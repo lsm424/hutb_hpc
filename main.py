@@ -2,7 +2,6 @@ import dash
 from dash import html, dcc, Input, Output, State
 import dash_bootstrap_components as dbc
 from components import sidebar, header
-from service.hpc_manager import hpc_manager
 
 # Initialize Dash app
 app = dash.Dash(
@@ -23,7 +22,7 @@ app.layout = html.Div([
     html.Div([
         header.create_header(),
         dash.page_container
-    ], className="flex-1 ml-64 min-h-screen flex flex-col")
+    ], className="flex-1 ml-52 min-h-screen flex flex-col")
 ], className="bg-gray-950 text-gray-100 flex font-sans min-h-screen")
 
 if __name__ == '__main__':
