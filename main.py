@@ -26,4 +26,4 @@ app.layout = html.Div([
 ], className="bg-gray-950 text-gray-100 flex font-sans min-h-screen")
 
 if __name__ == '__main__':
-    app.run(debug=False, port=8050)
+    app.run(debug=False, port=8050, host='0.0.0.0')
