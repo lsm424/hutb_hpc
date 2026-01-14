@@ -1,5 +1,5 @@
 ﻿import dash
-from dash import html, dcc, Input, Output, State, callback, ALL, MATCH, ctx, ClientsideFunction
+from dash import html, dcc, Input, Output, State, callback, ALL, MATCH, ctx, ClientsideFunction, clientside_callback
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import random
@@ -87,6 +87,7 @@ layout = html.Div([
     dcc.Location(id='nodes-url', refresh=False),
     dcc.Store(id='selected-node-store', data=None),
     dcc.Store(id='chart-period-store', data='1w'),
+    dcc.Store(id='scroll-trigger-store', data=None),
     
     html.Div([
         html.Div(id='nodes-badges', className="flex items-center gap-2 mb-4"),
@@ -188,13 +189,47 @@ layout = html.Div([
             id='scroll-to-top-btn',
             n_clicks=0,
             className="fixed bottom-8 right-8 w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 z-50 flex items-center justify-center",
-            style={'opacity': '0', 'pointer-events': 'none', 'transition': 'opacity 0.3s, transform 0.3s'}
+            # style={'opacity': '0', 'pointer-events': 'none', 'transition': 'opacity 0.3s, transform 0.3s'}
         )
     ], className="p-6 pb-96", id='nodes-content')
 ])
 
 # 注意：滚动到详情面板功能已改为使用 URL hash 锚点 (#node-detail-panel-anchor)
 # 点击卡片时会自动更新 URL hash，浏览器会自动滚动到锚点位置
+
+clientside_callback(
+    '''
+    function scrollToAnchor(node_id) {
+        var anchor = document.getElementById('node-detail-panel-anchor');
+        if (anchor) {
+            setTimeout(function() {
+                // 计算 Header 的高度（sticky header）
+                var header = document.querySelector('header');
+                var headerHeight = 0;
+                if (header) {
+                    var headerRect = header.getBoundingClientRect();
+                    headerHeight = headerRect.height;
+                } else {
+                    // 如果找不到 header，使用默认值 64px (h-16) + 一些额外空间
+                    headerHeight = 80;
+                }
+                
+                // 获取锚点的位置
+                var anchorTop = anchor.getBoundingClientRect().top + window.pageYOffset;
+                
+                // 滚动到锚点位置，减去 Header 高度，确保不被遮挡
+                window.scrollTo({
+                    top: anchorTop - headerHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
+        }
+        return '';
+    }
+    ''',
+    Output('node-detail-panel-anchor', 'children'),
+    Input('selected-node-store', 'data')
+)
 
 @callback(
     [Output('nodes-grid', 'children'),
@@ -296,21 +331,24 @@ def update_node_grid(search, selected_id, part_filter, health_filter):
 
 @callback(
     [Output('selected-node-store', 'data'),
-     Output('nodes-url', 'hash')],
+     Output('nodes-url', 'hash'),
+     Output('scroll-trigger-store', 'data')],
     Input({'type': 'node-card', 'index': ALL}, 'n_clicks'),
     prevent_initial_call=True
 )
 def handle_card_click(n_clicks):
     if not any(n_clicks):
-        return dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update
     
     ctx_triggered = ctx.triggered_id
     if not ctx_triggered:
-        return dash.no_update, dash.no_update
+        return dash.no_update, dash.no_update, dash.no_update
     
     node_id = ctx_triggered['index']
-    # 返回选中的节点ID和hash锚点，跳转到详情面板上方的锚点div（始终可见）
-    return node_id, '#node-detail-panel-anchor'
+    import time
+    # 返回选中的节点ID、hash锚点和滚动触发器
+    # 使用时间戳作为触发器，确保每次点击都会触发滚动
+    return node_id, '#node-detail-panel-anchor', time.time()
 
 @callback(
     Output('chart-period-store', 'data'),
@@ -358,21 +396,22 @@ def update_detail_panel(selected_id, period):
     else:
         # gpu_history = node.get_history('GPU', period2days[period])
         gpu_infos = node.gpu_info
-        for idx, gpu_info in gpu_infos.items():
-            usage = gpu_info['usedRatio']
-            temp = int(gpu_info['temperature'])
-            temp_color = "text-red-400" if temp > 75 else "text-yellow-400" if temp > 60 else "text-emerald-400"
-            row = html.Tr([
-                html.Td(f"{idx}", className="px-3 py-2 text-gray-300"),
-                html.Td(gpu_info['name'], className="px-3 py-2 text-gray-400"),
-                html.Td(f"{gpu_info['memUsed']} / {gpu_info['mem']}", className="px-3 py-2 text-gray-400"),
-                html.Td([
-                    html.Div(html.Div(style={'width': f'{usage}%'}, className="h-full bg-emerald-500"), className="w-16 h-2 bg-gray-800 rounded-full overflow-hidden inline-block align-middle mr-2"),
-                    f"{usage}%"
-                ], className="px-3 py-2 text-gray-400"),
-                html.Td(f"{temp}C", className=f"px-3 py-2 {temp_color}")
-            ], className="hover:bg-gray-800/50")
-            gpu_rows.append(row)
+        if gpu_infos:
+            for idx, gpu_info in gpu_infos.items():
+                usage = gpu_info['usedRatio']
+                temp = int(gpu_info['temperature'])
+                temp_color = "text-red-400" if temp > 75 else "text-yellow-400" if temp > 60 else "text-emerald-400"
+                row = html.Tr([
+                    html.Td(f"{idx}", className="px-3 py-2 text-gray-300"),
+                    html.Td(gpu_info['name'], className="px-3 py-2 text-gray-400"),
+                    html.Td(f"{gpu_info['memUsed']} / {gpu_info['mem']}", className="px-3 py-2 text-gray-400"),
+                    html.Td([
+                        html.Div(html.Div(style={'width': f'{usage}%'}, className="h-full bg-emerald-500"), className="w-16 h-2 bg-gray-800 rounded-full overflow-hidden inline-block align-middle mr-2"),
+                        f"{usage}%"
+                    ], className="px-3 py-2 text-gray-400"),
+                    html.Td(f"{temp}C", className=f"px-3 py-2 {temp_color}")
+                ], className="hover:bg-gray-800/50")
+                gpu_rows.append(row)
             
     gpu_fig = create_chart("GPU", "#6366f1", node.get_history('GPU', period2days[period]))
     cpu_fig = create_chart("CPU", "#a855f7", node.get_history('CPU', period2days[period]))

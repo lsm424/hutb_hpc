@@ -3,10 +3,52 @@
     var initialized = false;
     
     function initScrollFeatures() {
-        if (initialized) return;
+        // if (initialized) return;
         
-        // 注意：滚动到详情面板功能已改为使用 URL hash 锚点 (#node-detail-panel-anchor)
-        // 锚点 div 始终可见，浏览器会自动滚动到锚点位置，无需 JavaScript 处理
+        // // 滚动到锚点的函数
+        // function scrollToAnchor() {
+        //     var anchor = document.getElementById('node-detail-panel-anchor');
+        //     if (anchor) {
+        //         setTimeout(function() {
+        //             // 计算 Header 的高度（sticky header）
+        //             var header = document.querySelector('header');
+        //             var headerHeight = 0;
+        //             if (header) {
+        //                 var headerRect = header.getBoundingClientRect();
+        //                 headerHeight = headerRect.height;
+        //             } else {
+        //                 // 如果找不到 header，使用默认值 64px (h-16) + 一些额外空间
+        //                 headerHeight = 80;
+        //             }
+                    
+        //             // 获取锚点的位置
+        //             var anchorTop = anchor.getBoundingClientRect().top + window.pageYOffset;
+                    
+        //             // 滚动到锚点位置，减去 Header 高度，确保不被遮挡
+        //             window.scrollTo({
+        //                 top: anchorTop - headerHeight,
+        //                 behavior: 'smooth'
+        //             });
+        //         }, 100);
+        //     }
+        // }
+        
+        // // 监听 URL hash 变化（浏览器原生事件）
+        // window.addEventListener('hashchange', function() {
+        //     if (window.location.hash === '#node-detail-panel-anchor') {
+        //         scrollToAnchor();
+        //     }
+        // });
+        
+        // // 页面加载时检查 hash
+        // if (window.location.hash === '#node-detail-panel-anchor') {
+        //     setTimeout(scrollToAnchor, 300);
+        // }
+        
+        // // 监听 Dash 的更新事件（如果可用）
+        // if (window.dash_clientside && window.dash_clientside.no_update) {
+        //     // Dash 客户端回调环境
+        // }
         
         // 显示/隐藏回到顶部按钮
         var scrollToTopBtn = document.getElementById('scroll-to-top-btn');

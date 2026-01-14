@@ -74,7 +74,7 @@ layout = html.Div([
     html.Header([
         html.Div([
             html.I(className="fa-solid fa-location-dot mr-2"),
-            html.Span("HPC Cluster A")
+            html.Span("HUTB HPC Cluster")
         ], className="flex items-center gap-4 text-gray-400 text-sm"),
         
         html.Div([

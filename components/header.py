@@ -1,7 +1,7 @@
 from dash import html
 from dash_bootstrap_components import Input
 
-def create_header(title="HPC Cluster A"):
+def create_header(title="HUTB HPC Cluster"):
     return html.Header(
         [
             html.Div(
@@ -35,5 +35,6 @@ def create_header(title="HPC Cluster A"):
                 className="flex items-center gap-4"
             )
         ],
+        id="header",
         className="h-16 bg-gray-900/50 backdrop-blur border-b border-gray-800 flex items-center justify-between px-6 sticky top-0 z-40"
     )
