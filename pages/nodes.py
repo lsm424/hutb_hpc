@@ -272,7 +272,7 @@ clientside_callback(
                 top: 0,
                 behavior: 'smooth'
             });
-            return '';
+            return 0;
         }
         var anchor = document.getElementById('node-detail-panel-anchor');
         if (anchor) {
@@ -298,12 +298,13 @@ clientside_callback(
                 });
             }, 100);
         }
-        return '';
+        return 0;
     }
     ''',
-    Output('node-detail-panel-anchor', 'children'),
+    Output('back-to-top', 'n_clicks', allow_duplicate=True),
     Input('selected-node-store', 'data'),
-    Input('back-to-top', 'n_clicks')
+    Input('back-to-top', 'n_clicks'),
+    prevent_initial_call=True
 )
 
 clientside_callback(
