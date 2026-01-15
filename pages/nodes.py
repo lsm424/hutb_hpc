@@ -108,7 +108,7 @@ def create_chart(title, color, history):
     #     x = [(end_date - timedelta(weeks=i)).strftime('%Y-%m-%d') for i in range(count)][::-1]
 
     x = [datetime.fromtimestamp(x['timestamp']) for x in history]
-    y = [x.get('cpu_usage', None) or x.get('mem_usage', None) or x.get('gpu_usage', None) * 100 for x in history]
+    y = [x.get('cpu_usage', None) or x.get('mem_usage', None) or x.get('gpu_usage', None) for x in history]
     
     fig = go.Figure(data=[go.Scatter(
         x=x, y=y,
