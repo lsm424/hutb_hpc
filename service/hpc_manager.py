@@ -296,6 +296,9 @@ class Node:
         self.gpu_info = api.get_node_gpu_info(self.node)
 
         nodeComputingResource = Partition.overview['nodeComputingResource'][self.node]
+        if not nodeComputingResource:
+            logger.error(f"获取节点{self.node}GPU信息失败, 数据为：{Partition.overview['nodeComputingResource']}")
+            return
         gpu_key = _extract_gpu_key(nodeComputingResource)
         self.card_type = gpu_key.split(':')[-1]
 
@@ -386,6 +389,7 @@ class Partition:
 
         nodes = Partition.overview['partitionNode'][self.partition_name]
         self.nodes = {node: Node(node, self) for node in nodes}
+        self.nodes = {key: value for key, value in self.nodes.items() if hasattr(value, 'cpu')}
         self.tasks = Task.tasks_by_partition.get(self.partition_name, [])
         self.updated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 

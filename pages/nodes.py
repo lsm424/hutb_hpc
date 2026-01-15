@@ -275,7 +275,8 @@ clientside_callback(
             return 0;
         }
         var anchor = document.getElementById('node-detail-panel-anchor');
-        if (anchor) {
+        if (anchor && node_id) {
+            console.log('scrollToAnchor', node_id);
             setTimeout(function() {
                 // 计算 Header 的高度（sticky header）
                 var header = document.querySelector('header');
@@ -296,6 +297,7 @@ clientside_callback(
                     top: anchorTop - headerHeight,
                     behavior: 'smooth'
                 });
+                console.log('scrollToAnchor', anchorTop - headerHeight);
             }, 100);
         }
         return 0;
