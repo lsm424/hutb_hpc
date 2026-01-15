@@ -9,7 +9,8 @@ create table t_node_cpu_history_info (
     primary key (`id`),
     INDEX node_idx (node),
     UNIQUE (node, timestamp),
-    INDEX timestamp_idx (timestamp)
+    INDEX timestamp_idx (timestamp),
+    INDEX node_timestamp_idx (node, timestamp)
 ) COMMENT='节点CPU历史信息表';
 
 create table t_node_mem_history_info (
@@ -22,8 +23,23 @@ create table t_node_mem_history_info (
     primary key (`id`),
     INDEX node_idx (node),
     UNIQUE (node, timestamp),
-    INDEX timestamp_idx (timestamp)
+    INDEX timestamp_idx (timestamp),
+    INDEX node_timestamp_idx (node, timestamp)
 ) COMMENT='节点内存历史信息表';
+
+create table t_node_gpu_history_info (
+    `id` int(11) not null auto_increment,
+    `node` varchar(255) not null default '' comment '节点名称',
+    `timestamp` int(11) not null comment '时间戳',
+    `gpu_usage` float not null,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    primary key (`id`),
+    INDEX node_idx (node),
+    UNIQUE (node, timestamp),
+    INDEX timestamp_idx (timestamp),
+    INDEX node_timestamp_idx (node, timestamp)
+) COMMENT='节点GPU历史信息表';
 
 create table t_daily_report_info (
     `id` int(11) not null auto_increment,
@@ -38,3 +54,8 @@ create table t_daily_report_info (
     primary key (`id`),
     unique key (date)
 ) comment='日报';
+
+-- 为现有表添加联合索引优化查询性能（如果表已存在，单独执行以下语句）
+-- ALTER TABLE t_node_cpu_history_info ADD INDEX node_timestamp_idx (node, timestamp);
+-- ALTER TABLE t_node_mem_history_info ADD INDEX node_timestamp_idx (node, timestamp);
+-- ALTER TABLE t_node_gpu_history_info ADD INDEX node_timestamp_idx (node, timestamp);

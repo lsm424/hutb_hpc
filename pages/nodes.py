@@ -1,11 +1,13 @@
-﻿import dash
+import dash
 from dash import html, dcc, Input, Output, State, callback, ALL, MATCH, ctx, ClientsideFunction, clientside_callback
 import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import random
 from datetime import datetime, timedelta
 from service.hpc_manager import Node, hpc_manager
-from common import utils
+from common import utils, logger
+import time
+import concurrent.futures
 
 dash.register_page(__name__, path='/nodes', name='节点管理')
 
@@ -36,6 +38,50 @@ period2days = {
     '3m': 90,
     '6m': 180,
 }
+
+# 降采样配置：当数据量超过此值时进行降采样
+MAX_CHART_POINTS = 2000  # 最大图表点数，可根据性能需求调整（默认2000点）
+
+def downsample_history(history, max_points=MAX_CHART_POINTS):
+    """
+    对历史数据进行降采样，减少数据量以提高图表渲染性能
+    
+    使用均匀采样方法，保留首尾两点，中间点均匀分布
+    
+    Args:
+        history: 历史数据列表，每条记录包含 timestamp 和对应的 usage 字段
+        max_points: 最大保留的数据点数，默认使用 MAX_CHART_POINTS
+        
+    Returns:
+        降采样后的历史数据列表
+    """
+    if not history or len(history) <= max_points:
+        return history
+    
+    # 数据量超过阈值，进行降采样
+    original_count = len(history)
+    
+    # 如果需要降采样，使用均匀间隔采样
+    # 计算采样步长，确保最终点数不超过 max_points
+    step = (original_count - 1) / (max_points - 1)
+    
+    sampled = []
+    for i in range(max_points):
+        index = int(i * step)
+        # 确保索引不超出范围
+        if index >= original_count:
+            index = original_count - 1
+        sampled.append(history[index])
+        
+        # 如果已经到达最后一个点，提前结束
+        if index >= original_count - 1:
+            break
+    
+    # 确保最后一个点被包含（处理浮点数误差）
+    if sampled[-1] != history[-1]:
+        sampled[-1] = history[-1]
+    
+    return sampled
 
 def gen_nodes():
     return [
@@ -432,6 +478,8 @@ def handle_period_click(n_clicks):
      Input('chart-period-store', 'data')]
 )
 def update_detail_panel(selected_id, period):
+    logger.info(f"update_detail_panel selected_id: {selected_id}, period: {period}, {ctx.triggered_id}")
+    starttime = time.time()
     periods = ['1w', '1m', '3m', '6m']
     btn_classes = []
     for p in periods:
@@ -470,11 +518,32 @@ def update_detail_panel(selected_id, period):
                     html.Td(f"{temp}C", className=f"px-3 py-2 {temp_color}")
                 ], className="hover:bg-gray-800/50")
                 gpu_rows.append(row)
-            
-    gpu_fig = create_chart("GPU", "#6366f1", node.get_history('GPU', period2days[period]))
-    cpu_fig = create_chart("CPU", "#a855f7", node.get_history('CPU', period2days[period]))
-    mem_fig = create_chart("MEM", "#3b82f6", node.get_history('Memory', period2days[period]))
-    
+
+
+    def get_chart_data(data_type, color, days):
+        # 传递max_points参数，让数据库层面进行降采样（更高效）
+        history = node.get_history(data_type, days, max_points=MAX_CHART_POINTS)
+
+        # 数据库层面已经进行了降采样，如果数据量仍然超过阈值，再进行应用层降采样（双重保险）
+        if len(history) > MAX_CHART_POINTS:
+            history = downsample_history(history, MAX_CHART_POINTS)
+        
+        ret = create_chart(data_type, color, history)
+        # 注意：时间统计已由get_history内部记录，这里只记录总体时间
+        return ret
+
+    # 使用 ThreadPoolExecutor 实现并行生成
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future_gpu = executor.submit(get_chart_data, "GPU", "#6366f1", period2days[period])
+        future_cpu = executor.submit(get_chart_data, "CPU", "#a855f7", period2days[period])
+        future_mem = executor.submit(get_chart_data, "Memory", "#3b82f6", period2days[period])
+        
+        gpu_fig = future_gpu.result()
+        cpu_fig = future_cpu.result()
+        mem_fig = future_mem.result()
+
+    endtime = time.time()
+    logger.info(f"update_detail_panel time: {endtime - starttime}s")
     return btn_classes, "bg-gray-900 border border-gray-800 rounded-xl p-6 animate-fade-in-up", f"{selected_id} 详情", gpu_rows, gpu_fig, cpu_fig, mem_fig
 
 

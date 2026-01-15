@@ -7,7 +7,7 @@ from itertools import groupby
 from common.utils import Unit2int
 from datetime import datetime, timedelta
 from functools import reduce
-from sqlalchemy import and_, tuple_, text, insert
+from sqlalchemy import and_, tuple_, text, insert, func
 from sqlalchemy.exc import IntegrityError
 from models.model import TNodeCpuHistoryInfo, TNodeGpuHistoryInfo, TNodeMemHistoryInfo, TDailyReportInfo
 from models import get_db_context_session
@@ -140,19 +140,118 @@ class Node:
             # 'duration': self.updated_at - self.created_at,
         }
     
-    def get_history(self, history_type, recent_days=30):
+    def get_history(self, history_type, recent_days=30, max_points=2000):
+        """
+        获取节点历史数据，支持数据库层面的降采样优化
+        
+        Args:
+            history_type: 历史类型 ('CPU', 'Memory', 'GPU')
+            recent_days: 最近天数
+            max_points: 最大返回数据点数，超过此值会在数据库层面进行降采样
+        """
+        start_timestampe = time.time()
         if history_type == 'CPU':
             table = TNodeCpuHistoryInfo
+            usage_field = 'cpu_usage'
         elif history_type == 'Memory':
             table = TNodeMemHistoryInfo
+            usage_field = 'mem_usage'
         elif history_type == 'GPU':
             table = TNodeGpuHistoryInfo
+            usage_field = 'gpu_usage'
+        else:
+            return []
+        
         start_time = int((datetime.now() - timedelta(days=recent_days)).timestamp())
+        
         with get_db_context_session() as session:
-            data = session.query(table).filter(and_(table.node == self.node, table.timestamp >= start_time)).order_by(table.timestamp.asc()).all()
-            data = list(map(lambda x: x.to_dict(), data))
-        return data
-    
+            # data = session.query(table).filter(and_(table.node == self.node, table.timestamp >= start_time)).order_by(table.timestamp.asc()).all()
+            try:
+                # 合并查询：同时获取数据总量和时间范围（使用ORM方式）
+                base_filter = and_(table.node == self.node, table.timestamp >= start_time)
+                stats_query = session.query(
+                    func.count(table.id).label('total_count'),
+                    func.min(table.timestamp).label('min_ts'),
+                    func.max(table.timestamp).label('max_ts')
+                ).filter(base_filter).first()
+                
+                if not stats_query:
+                    return []
+                
+                total_count = stats_query.total_count or 0
+                
+                # 如果数据量超过阈值，使用数据库层面的降采样
+                if total_count > max_points and stats_query.min_ts is not None and stats_query.max_ts is not None:
+                    min_ts = stats_query.min_ts
+                    max_ts = stats_query.max_ts
+                    time_span = max_ts - min_ts
+                    # 计算采样间隔（秒），确保采样后不超过max_points
+                    interval = max(1, int(time_span / max_points))
+                    
+                    # 使用SQLAlchemy ORM方式实现窗口函数降采样
+                    # 这个逻辑的目的是对一段时间内的历史节点数据进行降采样，以数据量不过多、画图平滑为目标。
+                    # 主体逻辑：
+                    # 1. 使用ROW_NUMBER()窗口函数，给每个采样区间（通过FLOOR((timestamp - min_ts)/interval)分组）内的数据按timestamp升序编号
+                    # 2. 只保留每组的第一个点（rn = 1），也就是每个采样区间的起始数据
+                    # 3. 按照时间戳升序排序，返回不超过max_points条
+                    
+                    data = session.execute(
+                        # 解释为什么要用子查询：ROW_NUMBER() 是窗口函数，rn 是 select 阶段动态生成的别名，不能直接在同级 WHERE 子句使用，
+                        # 因为 WHERE 在 SELECT 之前执行。必须用子查询先选出带 rn 的表，再在外层 where 过滤 rn=1。
+                        # 
+                        # 关于 limit：如果把 limit 放在子查询里，仅对子查询的原始行数做限制（不是降采样后的数据点，也不是最终的结果），
+                        # 这样可能导致采样区间不完整或有遗漏，最终采样点不足 max_points。所以 limit 只能放到最外层，确保拿到足够的降采样点后再截断。
+                        text(f"""
+                            SELECT timestamp, {usage_field}
+                            FROM (
+                                SELECT timestamp, {usage_field},
+                                    ROW_NUMBER() OVER (
+                                        PARTITION BY FLOOR((timestamp - :min_ts) / :interval)
+                                        ORDER BY timestamp ASC
+                                    ) as rn
+                                FROM {table.__tablename__}
+                                WHERE node = :node AND timestamp >= :start_time
+                            ) sub
+                            WHERE rn = 1
+                            ORDER BY timestamp ASC
+                            LIMIT :limit
+                        """),
+                        {
+                            'node': self.node,
+                            'start_time': start_time,
+                            'min_ts': min_ts,
+                            'interval': interval,
+                            'limit': max_points
+                        }
+                    ).fetchall()
+                                            
+                    # 转换为字典格式
+                    data = [
+                        {'timestamp': row[0], usage_field: row[1]}
+                        for row in data
+                    ]
+                                            
+                    logger.info(f"get_history {history_type} 数据库降采样: 原始{total_count}条 -> 采样后{len(data)}条, 间隔{interval}秒, 用时：{time.time() - start_timestampe:.3f}s")
+                    return data
+                # 数据量不大，直接查询全部
+                data = session.query(table).filter(
+                    and_(table.node == self.node, table.timestamp >= start_time)
+                ).order_by(table.timestamp.asc()).all()
+                # 转换为字典格式
+                data = [
+                    {
+                        'timestamp': item.timestamp,
+                        usage_field: getattr(item, usage_field)
+                    }
+                    for item in data
+                ]
+                
+                logger.info(f"get_history {history_type} 直接查询: 原始{total_count}条 -> 采样后{len(data)}条, 用时：{time.time() - start_timestampe:.3f}s")
+                return data
+            except Exception as e:
+                logger.error(f"获取节点{self.node}历史信息失败: {e}")
+                return []
+
     def save_cpu_history(self):
         data = api.get_node_cpu_usage(self.node)
         if not data:
