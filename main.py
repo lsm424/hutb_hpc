@@ -50,4 +50,42 @@ if __name__ == '__main__':
 
     kill_prev_pid(PID_FILE)
     write_pid(PID_FILE)
+    # INSERT_YOUR_CODE
+    # 兼容给windows和linux，启动前杀死占用端口8050的进程（优先于PID文件）
+    def kill_process_on_port(port):
+        import sys
+        import subprocess
+
+        try:
+            if sys.platform.startswith('win'):
+                # windows
+                # 查询占用端口的PID
+                cmd_find = f'netstat -ano | findstr :{port}'
+                output = subprocess.check_output(cmd_find, shell=True, text=True)
+                for line in output.strip().splitlines():
+                    parts = line.split()
+                    # 最后一项为PID
+                    if len(parts) >= 5:
+                        pid = int(parts[-1])
+                        if pid != os.getpid():
+                            try:
+                                subprocess.call(f'taskkill /PID {pid} /F', shell=True)
+                            except Exception:
+                                pass
+            else:
+                # unix/linux/mac
+                cmd = f"lsof -i :{port} -t"
+                result = subprocess.check_output(cmd, shell=True, text=True)
+                for line in result.strip().splitlines():
+                    pid = int(line.strip())
+                    if pid != os.getpid():
+                        try:
+                            os.kill(pid, signal.SIGTERM)
+                        except Exception:
+                            pass
+        except Exception:
+            # 忽略所有异常
+            pass
+
+    kill_process_on_port(8050)
     app.run(debug=False, port=8050, host='0.0.0.0')
