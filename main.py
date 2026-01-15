@@ -26,4 +26,28 @@ app.layout = html.Div([
 ], className="bg-gray-950 text-gray-100 flex font-sans min-h-screen")
 
 if __name__ == '__main__':
+    import os
+    import signal
+
+    PID_FILE = './assets/hpc_dash.pid'
+
+    def kill_prev_pid(pid_file):
+        if os.path.isfile(pid_file):
+            try:
+                with open(pid_file, 'r') as f:
+                    prev_pid_str = f.read().strip()
+                    if prev_pid_str:
+                        prev_pid = int(prev_pid_str)
+                        if prev_pid != os.getpid():
+                            os.kill(prev_pid, signal.SIGTERM)
+            except Exception as e:
+                # Swallow all errors (process may not exist or not owned, etc.)
+                pass
+
+    def write_pid(pid_file):
+        with open(pid_file, 'w+') as f:
+            f.write(str(os.getpid()))
+
+    kill_prev_pid(PID_FILE)
+    write_pid(PID_FILE)
     app.run(debug=False, port=8050, host='0.0.0.0')
