@@ -6,7 +6,15 @@ def create_sidebar():
             # Logo / Brand
             html.Div(
                 [
-                    html.I(className="fa-solid fa-server text-indigo-500 text-xl mr-3"),
+                    html.Img(
+                        src="/assets/logo1.png",
+                        className="h-8 w-8 mr-3",
+                        style={
+                            "objectFit": "contain",
+                            "background": "transparent",     # 保证背景透明
+                            "backgroundColor": "transparent" # 保证dash inline style为透明
+                        }
+                    ),
                     html.Span("HPC Admin", className="font-bold text-lg tracking-wide"),
                 ],
                 className="h-16 flex items-center px-4 border-b border-gray-800"  # px-6 -> px-4

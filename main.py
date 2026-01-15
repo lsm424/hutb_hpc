@@ -12,8 +12,12 @@ app = dash.Dash(
         'https://cdn.tailwindcss.com', 
         'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js'
     ],
-    suppress_callback_exceptions=True
+    suppress_callback_exceptions=True,
+    title='HPC管理系统'  # 设置网站标题
+
 )
+app._favicon = "logo.jpg"  # 设置浏览器标签页图标
+
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
