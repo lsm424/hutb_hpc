@@ -4,7 +4,7 @@ from Crypto.Util.Padding import pad
 import struct
 import requests
 import time
-from common import logger
+from common import logger, cfg
 import threading
 import os
 
@@ -186,6 +186,17 @@ class HpcApi:
             return data
         return data['result']
 
+    @check_login
+    def get_all_users(self, page_no=1, pagesize=1000, username=None) -> list[dict]:
+        url = f'http://hpc.hutb.edu.cn/hpc-backend/sys/user/listAll?column=createTime&order=desc&pageNo={page_no}&pageSize={pagesize}&_t={int(time.time() * 1000)}'
+        if username:
+            url += f'&username={username}'
+        data = self.session.get(url).json()
+        if data.get('code', '') != 0:
+            logger.error(f"获取HPC所有用户失败，状态码：{data.get('code', '')}，响应内容：{data}")
+            return data
+        return data['result']['records']
+
     # 简化版本，直接使用UTF-8编码的字节作为密钥和IV
     def _encrypt_username_simple(self, username):
         """
@@ -207,3 +218,5 @@ class HpcApi:
 
         # Base64编码
         return base64.b64encode(encrypted_data).decode('utf-8')
+
+api = HpcApi(cfg.get('account', 'user'), cfg.get('account', 'passwd'), cfg.get('account', 'signature'))

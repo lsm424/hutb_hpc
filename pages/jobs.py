@@ -74,7 +74,7 @@ columnDefs = [
     {"headerName": "开始时间", "field": "submitTime", "sortable": True, "cellClass": "text-gray-400", "flex": 12},
     {"headerName": "结束时间", "field": "endTime", "sortable": True, "cellClass": "text-gray-500", "flex": 12,},
     {"headerName": "运行时长", "field": "duration", "sortable": True, "flex": 11},
-    {"headerName": "申请人", "field": "createBy", "cellRenderer": "markdown", "sortable": True, "flex": 10},
+    {"headerName": "申请人", "field": "createBy_html", "cellRenderer": "markdown", "sortable": True, "flex": 10},
     {"headerName": "节点", "field": "node_html", "cellRenderer": "markdown", "flex": 7, "cellClass": "text-gray-400"},
     {"headerName": "分区", "field": "partition_html", "cellRenderer": "markdown", "flex": 7},
     # {"headerName": "查看节点", "field": "view_node_html", "cellRenderer": "markdown", "minWidth": 110}
@@ -102,12 +102,12 @@ layout = html.Div([
                     ],
                     value='all',
                     clearable=False,
-                    className="mt-1 w-32"
+                    className="mt-1 w-48"
                 )
             ], className="flex flex-col"),
             html.Div([
                 html.Label("用户", className="text-xs text-gray-400"),
-                dcc.Input(id='job-user-filter', placeholder="按申请人", className="mt-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white w-40")
+                dcc.Input(id='job-user-filter', placeholder="按申请人", className="mt-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white w-48")
             ], className="flex flex-col"),
             # html.Div([
             #     html.Label("资源需求", className="text-xs text-gray-400"),
@@ -145,6 +145,7 @@ layout = html.Div([
 @callback(
     [Output('jobs-grid', 'rowData'),
      Output('jobs-badges', 'children')],
+     Output('job-user-filter', 'value'),
     [Input('jobs-url', 'search'),
     Input('job-status-filter', 'value'),
      Input('job-user-filter', 'value'),
@@ -153,11 +154,14 @@ layout = html.Div([
 )
 def update_jobs(search, status, user, res_str=None):
     params = utils.search_params(search)
-    
+
     part_param = params.get('partition')
     node_param = params.get('node')
-    
+    username_param = params.get('username') or user or ''
+
     badges = []
+    if username_param:
+        badges.append(html.Span(f"用户: {username_param}", className="px-2 py-0.5 bg-indigo-900/50 text-indigo-300 rounded text-xs border border-indigo-700/50"))
     if part_param:
         badges.append(html.Span(f"分区: {part_param}", className="px-2 py-0.5 bg-indigo-900/50 text-indigo-300 rounded text-xs border border-indigo-700/50"))
     if node_param:
@@ -168,18 +172,17 @@ def update_jobs(search, status, user, res_str=None):
     filtered_df['resources'] = filtered_df.apply(map2resourcedesc, axis=1)
     filtered_df['partition_html'] = filtered_df['partition'].apply(map2partition)
     filtered_df['node_html'] = filtered_df['nodes'].apply(map2node)
+    filtered_df['createBy_html'] = filtered_df['createBy'].apply(map2username)
 
     if part_param:
         filtered_df = filtered_df[filtered_df['partition'] == part_param]
     if node_param:
         filtered_df = filtered_df[filtered_df['node'] == node_param]
-
     if status and status != 'all':
         filtered_df = filtered_df[filtered_df['status'] == status]
-        
-    if user:
-        filtered_df = filtered_df[filtered_df['createBy'].str.contains(user, case=False)]
-        
+    if username_param:
+        filtered_df = filtered_df[filtered_df['createBy'].str.contains(username_param, case=False)]
+
     if res_str:
         parts = res_str.split(' ')
         for p in parts:
@@ -200,7 +203,7 @@ def update_jobs(search, status, user, res_str=None):
                 elif op == '=' or op == '==':
                     filtered_df = filtered_df[filtered_df[key] == val]
 
-    return filtered_df.to_dict("records"), badges
+    return filtered_df.to_dict("records"), badges, username_param
 
 def map2status_html(status):
     status_color_class = ""
@@ -219,6 +222,12 @@ def map2status_html(status):
 def map2partition(partition):
     view_part_html = f'<a href="/?partition={partition}" class="text-xs px-2 py-1 rounded border border-gray-700 hover:bg-gray-800 hover:text-white text-indigo-300 transition-colors" style="text-decoration: none;">{partition}</a>'
     return view_part_html
+
+
+def map2username(username):
+    view_user_html = f'<a href="/users?username={username}" class="text-xs px-2 py-1 rounded border border-gray-700 hover:bg-gray-800 hover:text-white text-indigo-300 transition-colors" style="text-decoration: none;">{username}</a>'
+    return view_user_html
+
 
 def map2node(node):
     if node:

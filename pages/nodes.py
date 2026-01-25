@@ -40,7 +40,7 @@ period2days = {
 }
 
 # 降采样配置：当数据量超过此值时进行降采样
-MAX_CHART_POINTS = 2000  # 最大图表点数，可根据性能需求调整（默认2000点）
+MAX_CHART_POINTS = 100  # 最大图表点数，可根据性能需求调整（默认2000点）
 
 def downsample_history(history, max_points=MAX_CHART_POINTS):
     """
@@ -172,7 +172,7 @@ layout = html.Div([
                     ] + [{'label': p, 'value': p} for p in hpc_manager.partitions.keys()],
                     value='all',
                     clearable=False,
-                    className="mt-1 w-32"
+                    className="mt-1 w-48"
                 )
             ]),
             html.Div([
@@ -187,7 +187,7 @@ layout = html.Div([
                     ],
                     value='all',
                     clearable=False,
-                    className="mt-1 w-32"
+                    className="mt-1 w-48"
                 )
             ]),
             html.Div(className="flex-1"),
@@ -525,8 +525,10 @@ def update_detail_panel(selected_id, period):
 
     def get_chart_data(data_type, color, days):
         # 传递max_points参数，让数据库层面进行降采样（更高效）
+        start = time.time()
         history = node.get_history(data_type, days, max_points=MAX_CHART_POINTS)
-
+        end = time.time()
+        logger.info(f"get_chart_data {data_type} time: {end - start}s")
         # 数据库层面已经进行了降采样，如果数据量仍然超过阈值，再进行应用层降采样（双重保险）
         if len(history) > MAX_CHART_POINTS:
             history = downsample_history(history, MAX_CHART_POINTS)

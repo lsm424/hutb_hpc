@@ -51,6 +51,15 @@ def create_sidebar():
                     ),
                     dcc.Link(
                         [
+                            html.I(className="fa-solid fa-list-check w-5 text-center"),
+                            html.Span("用户管理"),
+                        ],
+                        href="/users",
+                        className="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors nav-link",  # px-4 -> px-3
+                        id="nav-users"
+                    ),
+                    dcc.Link(
+                        [
                             html.I(className="fa-solid fa-calendar-day w-5 text-center"),
                             html.Span("日报"),
                         ],

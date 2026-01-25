@@ -59,3 +59,19 @@ create table t_daily_report_info (
 -- ALTER TABLE t_node_cpu_history_info ADD INDEX node_timestamp_idx (node, timestamp);
 -- ALTER TABLE t_node_mem_history_info ADD INDEX node_timestamp_idx (node, timestamp);
 -- ALTER TABLE t_node_gpu_history_info ADD INDEX node_timestamp_idx (node, timestamp);
+
+create table t_hpc_user_info (
+    id int(11) not null auto_increment,
+    hpc_id varchar(255) not null default '' comment 'HPC ID',
+    username varchar(255) not null default '' comment '用户名',
+    realname varchar(255) not null default '' comment '真实姓名',
+    email varchar(255) not null default '' comment '邮箱',
+    phone varchar(255) not null default '' comment '电话',
+    role_name varchar(1024) not null default '' comment '角色名称',
+    register_time TIMESTAMP not null comment '注册时间',
+    status varchar(255) not null default '0' comment '状态',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    primary key (`id`),
+    unique key (username)
+) COMMENT='HPC用户信息表';

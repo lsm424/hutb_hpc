@@ -14,8 +14,7 @@ from models import get_db_context_session
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 import time
 import pandas as pd
-
-api = HpcApi(cfg.get('account', 'user'), cfg.get('account', 'passwd'), cfg.get('account', 'signature'))
+from infra.hpc_api import api
 
 
 def _extract_gpu_key(info: dict):

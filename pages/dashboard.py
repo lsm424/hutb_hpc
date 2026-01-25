@@ -77,7 +77,7 @@ layout = html.Div([
                         [{'label': p, 'value': p} for p in hpc_manager.partitions],
                     value='all',
                     clearable=False,
-                    className="mt-1 w-32"
+                    className="mt-1 w-48"
                 )
             ]),
             html.Div([
@@ -93,7 +93,7 @@ layout = html.Div([
                     ],
                     value='free_cpu',
                     clearable=False,
-                    className="mt-1 w-32"
+                    className="mt-1 w-48"
                 )
             ]),
             html.Div(className="flex-1"),
