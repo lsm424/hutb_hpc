@@ -166,25 +166,24 @@ class Node:
         with get_db_context_session() as session:
             # data = session.query(table).filter(and_(table.node == self.node, table.timestamp >= start_time)).order_by(table.timestamp.asc()).all()
             try:
-                # 合并查询：同时获取数据总量和时间范围（使用ORM方式）
+                # 只取时间范围，不 count，避免 25 万行级别上的全索引扫描
                 base_filter = and_(table.node == self.node, table.timestamp >= start_time)
                 stats_query = session.query(
-                    func.count(table.id).label('total_count'),
                     func.min(table.timestamp).label('min_ts'),
                     func.max(table.timestamp).label('max_ts')
                 ).filter(base_filter).first()
                 
-                if not stats_query:
+                if not stats_query or stats_query.min_ts is None or stats_query.max_ts is None:
                     return []
                 
-                total_count = stats_query.total_count or 0
+                min_ts = stats_query.min_ts
+                max_ts = stats_query.max_ts
+                time_span = max_ts - min_ts
+                # 用时间跨度和 max_points 判断是否需要降采样，无需 total_count
+                interval = max(1, int(time_span / max_points)) if time_span else 1
+                need_downsample = time_span > 0 and (time_span // interval) > max_points
                 
-                # 如果数据量超过阈值，使用「目标时间点 + 索引逐点查找」降采样，避免全量扫描
-                if total_count > max_points and stats_query.min_ts is not None and stats_query.max_ts is not None:
-                    min_ts = stats_query.min_ts
-                    max_ts = stats_query.max_ts
-                    time_span = max_ts - min_ts
-                    interval = max(1, int(time_span / max_points))
+                if need_downsample:
                     # 生成目标时间点列表（最多 max_points 个）
                     target_ts_list = [
                         min_ts + i * interval
@@ -194,25 +193,27 @@ class Node:
                     if not target_ts_list:
                         return []
                     tbl = table.__tablename__
-                    # 使用临时表 + 按点索引查找：每个目标时间点只做一次 (node, timestamp) 上的范围查找，
-                    # 总成本约 2000 * O(log n)，远小于扫描 25 万行
+                    # 临时表 + LATERAL：每个目标时间点用索引做 ORDER BY timestamp LIMIT 1，避免全表/全索引扫描
                     try:
                         session.execute(text(
                             "CREATE TEMPORARY TABLE IF NOT EXISTS _downsample_targets (target_ts INT PRIMARY KEY)"
                         ))
                         session.execute(text("TRUNCATE TABLE _downsample_targets"))
-                        session.execute(
-                            text("INSERT INTO _downsample_targets (target_ts) VALUES (:ts)"),
-                            [{"ts": ts} for ts in target_ts_list]
-                        )
+                        # 单条 INSERT 多值，避免 2000 次参数 round-trip
+                        values_str = ",".join(f"({ts})" for ts in target_ts_list)
+                        session.execute(text(f"INSERT INTO _downsample_targets (target_ts) VALUES {values_str}"))
+                        # LATERAL + LIMIT 1 便于优化器做「每行一次索引查找」，需 MySQL 8.0.14+
                         data = session.execute(
                             text(f"""
-                                SELECT DISTINCT t.timestamp, t.{usage_field}
+                                SELECT t.timestamp, t.{usage_field}
                                 FROM _downsample_targets tt
-                                INNER JOIN {tbl} t ON t.node = :node AND t.timestamp = (
-                                    SELECT MIN(t2.timestamp) FROM {tbl} t2
-                                    WHERE t2.node = :node AND t2.timestamp >= tt.target_ts
-                                )
+                                INNER JOIN LATERAL (
+                                    SELECT timestamp, {usage_field}
+                                    FROM {tbl}
+                                    WHERE node = :node AND timestamp >= tt.target_ts
+                                    ORDER BY timestamp ASC
+                                    LIMIT 1
+                                ) t ON TRUE
                                 ORDER BY t.timestamp ASC
                             """),
                             {"node": self.node}
@@ -226,7 +227,7 @@ class Node:
                         for row in data
                     ]
                                             
-                    logger.info(f"get_history {history_type} 数据库降采样: 原始{total_count}条 -> 采样后{len(data)}条, 间隔{interval}秒, 用时：{time.time() - start_timestampe:.3f}s")
+                    logger.info(f"get_history {history_type} 数据库降采样: 采样后{len(data)}条, 间隔{interval}秒, 用时：{time.time() - start_timestampe:.3f}s")
                     return data
                 # 数据量不大，直接查询全部
                 data = session.query(table).filter(
@@ -241,7 +242,7 @@ class Node:
                     for item in data
                 ]
                 
-                logger.info(f"get_history {history_type} 直接查询: 原始{total_count}条 -> 采样后{len(data)}条, 用时：{time.time() - start_timestampe:.3f}s")
+                logger.info(f"get_history {history_type} 直接查询: 返回{len(data)}条, 用时：{time.time() - start_timestampe:.3f}s")
                 return data
             except Exception as e:
                 logger.error(f"获取节点{self.node}历史信息失败: {e}")
