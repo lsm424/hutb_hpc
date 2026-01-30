@@ -179,43 +179,46 @@ class Node:
                 
                 total_count = stats_query.total_count or 0
                 
-                # 如果数据量超过阈值，使用数据库层面的降采样
+                # 如果数据量超过阈值，使用「目标时间点 + 索引逐点查找」降采样，避免全量扫描
                 if total_count > max_points and stats_query.min_ts is not None and stats_query.max_ts is not None:
                     min_ts = stats_query.min_ts
                     max_ts = stats_query.max_ts
                     time_span = max_ts - min_ts
-                    # 计算采样间隔（秒），确保采样后不超过max_points
                     interval = max(1, int(time_span / max_points))
-                    
-                    # 使用 GROUP BY 实现降采样（替代 ROW_NUMBER 窗口函数，在 25 万行级别下性能更好）：
-                    # 1. 内层按 (node, 时间桶) 分组，取每个桶的 MIN(timestamp) 得到采样点时间
-                    # 2. 再 JOIN 回原表取该时间点的 usage，ORDER BY + LIMIT 控制点数
-                    # 配合覆盖索引 (node, timestamp, usage) 可进一步减少回表。
+                    # 生成目标时间点列表（最多 max_points 个）
+                    target_ts_list = [
+                        min_ts + i * interval
+                        for i in range(max_points)
+                        if min_ts + i * interval <= max_ts
+                    ]
+                    if not target_ts_list:
+                        return []
                     tbl = table.__tablename__
-                    data = session.execute(
-                        text(f"""
-                            SELECT t.timestamp, t.{usage_field}
-                            FROM {tbl} t
-                            INNER JOIN (
-                                SELECT node,
-                                       FLOOR((timestamp - :min_ts) / :interval) AS bucket,
-                                       MIN(timestamp) AS min_ts
-                                FROM {tbl}
-                                WHERE node = :node AND timestamp >= :start_time
-                                GROUP BY node, FLOOR((timestamp - :min_ts) / :interval)
-                                ORDER BY min_ts ASC
-                                LIMIT :limit
-                            ) sub ON sub.node = t.node AND sub.min_ts = t.timestamp
-                            ORDER BY t.timestamp ASC
-                        """),
-                        {
-                            'node': self.node,
-                            'start_time': start_time,
-                            'min_ts': min_ts,
-                            'interval': interval,
-                            'limit': max_points
-                        }
-                    ).fetchall()
+                    # 使用临时表 + 按点索引查找：每个目标时间点只做一次 (node, timestamp) 上的范围查找，
+                    # 总成本约 2000 * O(log n)，远小于扫描 25 万行
+                    try:
+                        session.execute(text(
+                            "CREATE TEMPORARY TABLE IF NOT EXISTS _downsample_targets (target_ts INT PRIMARY KEY)"
+                        ))
+                        session.execute(text("TRUNCATE TABLE _downsample_targets"))
+                        session.execute(
+                            text("INSERT INTO _downsample_targets (target_ts) VALUES (:ts)"),
+                            [{"ts": ts} for ts in target_ts_list]
+                        )
+                        data = session.execute(
+                            text(f"""
+                                SELECT DISTINCT t.timestamp, t.{usage_field}
+                                FROM _downsample_targets tt
+                                INNER JOIN {tbl} t ON t.node = :node AND t.timestamp = (
+                                    SELECT MIN(t2.timestamp) FROM {tbl} t2
+                                    WHERE t2.node = :node AND t2.timestamp >= tt.target_ts
+                                )
+                                ORDER BY t.timestamp ASC
+                            """),
+                            {"node": self.node}
+                        ).fetchall()
+                    finally:
+                        session.execute(text("DROP TEMPORARY TABLE IF EXISTS _downsample_targets"))
                                             
                     # 转换为字典格式
                     data = [
