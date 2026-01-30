@@ -60,6 +60,12 @@ create table t_daily_report_info (
 -- ALTER TABLE t_node_mem_history_info ADD INDEX node_timestamp_idx (node, timestamp);
 -- ALTER TABLE t_node_gpu_history_info ADD INDEX node_timestamp_idx (node, timestamp);
 
+-- 覆盖索引：降采样查询只读 (node, timestamp, usage)，无需回表，显著减少 IO（约 25 万行时效果明显）
+-- 若已有 node_timestamp_idx，可先 DROP 再建覆盖索引，或直接新增以下索引（查询会优先选用覆盖索引）
+-- ALTER TABLE t_node_cpu_history_info ADD INDEX node_ts_cpu_idx (node, timestamp, cpu_usage);
+-- ALTER TABLE t_node_mem_history_info ADD INDEX node_ts_mem_idx (node, timestamp, mem_usage);
+-- ALTER TABLE t_node_gpu_history_info ADD INDEX node_ts_gpu_idx (node, timestamp, gpu_usage);
+
 create table t_hpc_user_info (
     id int(11) not null auto_increment,
     hpc_id varchar(255) not null default '' comment 'HPC ID',

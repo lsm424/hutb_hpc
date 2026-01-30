@@ -187,33 +187,26 @@ class Node:
                     # 计算采样间隔（秒），确保采样后不超过max_points
                     interval = max(1, int(time_span / max_points))
                     
-                    # 使用SQLAlchemy ORM方式实现窗口函数降采样
-                    # 这个逻辑的目的是对一段时间内的历史节点数据进行降采样，以数据量不过多、画图平滑为目标。
-                    # 主体逻辑：
-                    # 1. 使用ROW_NUMBER()窗口函数，给每个采样区间（通过FLOOR((timestamp - min_ts)/interval)分组）内的数据按timestamp升序编号
-                    # 2. 只保留每组的第一个点（rn = 1），也就是每个采样区间的起始数据
-                    # 3. 按照时间戳升序排序，返回不超过max_points条
-                    
+                    # 使用 GROUP BY 实现降采样（替代 ROW_NUMBER 窗口函数，在 25 万行级别下性能更好）：
+                    # 1. 内层按 (node, 时间桶) 分组，取每个桶的 MIN(timestamp) 得到采样点时间
+                    # 2. 再 JOIN 回原表取该时间点的 usage，ORDER BY + LIMIT 控制点数
+                    # 配合覆盖索引 (node, timestamp, usage) 可进一步减少回表。
+                    tbl = table.__tablename__
                     data = session.execute(
-                        # 解释为什么要用子查询：ROW_NUMBER() 是窗口函数，rn 是 select 阶段动态生成的别名，不能直接在同级 WHERE 子句使用，
-                        # 因为 WHERE 在 SELECT 之前执行。必须用子查询先选出带 rn 的表，再在外层 where 过滤 rn=1。
-                        # 
-                        # 关于 limit：如果把 limit 放在子查询里，仅对子查询的原始行数做限制（不是降采样后的数据点，也不是最终的结果），
-                        # 这样可能导致采样区间不完整或有遗漏，最终采样点不足 max_points。所以 limit 只能放到最外层，确保拿到足够的降采样点后再截断。
                         text(f"""
-                            SELECT timestamp, {usage_field}
-                            FROM (
-                                SELECT timestamp, {usage_field},
-                                    ROW_NUMBER() OVER (
-                                        PARTITION BY FLOOR((timestamp - :min_ts) / :interval)
-                                        ORDER BY timestamp ASC
-                                    ) as rn
-                                FROM {table.__tablename__}
+                            SELECT t.timestamp, t.{usage_field}
+                            FROM {tbl} t
+                            INNER JOIN (
+                                SELECT node,
+                                       FLOOR((timestamp - :min_ts) / :interval) AS bucket,
+                                       MIN(timestamp) AS min_ts
+                                FROM {tbl}
                                 WHERE node = :node AND timestamp >= :start_time
-                            ) sub
-                            WHERE rn = 1
-                            ORDER BY timestamp ASC
-                            LIMIT :limit
+                                GROUP BY node, FLOOR((timestamp - :min_ts) / :interval)
+                                ORDER BY min_ts ASC
+                                LIMIT :limit
+                            ) sub ON sub.node = t.node AND sub.min_ts = t.timestamp
+                            ORDER BY t.timestamp ASC
                         """),
                         {
                             'node': self.node,
