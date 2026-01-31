@@ -40,7 +40,7 @@ period2days = {
 }
 
 # 降采样配置：当数据量超过此值时进行降采样
-MAX_CHART_POINTS = 100  # 最大图表点数，可根据性能需求调整（默认2000点）
+MAX_CHART_POINTS = 2000  # 最大图表点数，可根据性能需求调整（默认2000点）
 
 def downsample_history(history, max_points=MAX_CHART_POINTS):
     """
@@ -530,8 +530,8 @@ def update_detail_panel(selected_id, period):
         end = time.time()
         logger.info(f"get_chart_data {data_type} time: {end - start}s")
         # 数据库层面已经进行了降采样，如果数据量仍然超过阈值，再进行应用层降采样（双重保险）
-        if len(history) > MAX_CHART_POINTS:
-            history = downsample_history(history, MAX_CHART_POINTS)
+        #if len(history) > MAX_CHART_POINTS:
+        #    history = downsample_history(history, MAX_CHART_POINTS)
         
         ret = create_chart(data_type, color, history)
         # 注意：时间统计已由get_history内部记录，这里只记录总体时间

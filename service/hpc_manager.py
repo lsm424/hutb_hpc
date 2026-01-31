@@ -181,7 +181,7 @@ FROM
 	(
 	SELECT
 		(timestamp - :start) DIV :step AS bucket_idx,
-		AVG(gpu_usage) AS avg_val
+		SUBSTRING_INDEX(GROUP_CONCAT(gpu_usage ORDER BY timestamp ASC), ',', 1) AS avg_val
 	FROM
 		t_node_gpu_history_info FORCE INDEX (node_ts_gpu_idx)
 	WHERE
@@ -201,7 +201,7 @@ ORDER BY
                                             
                 # 转换为字典格式
                 data = [
-                    {'timestamp': row[0], usage_field: row[1]}
+                    {'timestamp': row[0], usage_field: float(row[1])}
                     for row in data
                 ]
                                         
@@ -575,3 +575,4 @@ class HpcManager:
         return self.partitions
 
 hpc_manager = HpcManager()
+
