@@ -152,12 +152,15 @@ class Node:
         if history_type == 'CPU':
             table = TNodeCpuHistoryInfo
             usage_field = 'cpu_usage'
+            index_name = 'node_ts_cpu_idx'
         elif history_type == 'Memory':
             table = TNodeMemHistoryInfo
             usage_field = 'mem_usage'
+            index_name = 'node_ts_mem_idx'
         elif history_type == 'GPU':
             table = TNodeGpuHistoryInfo
             usage_field = 'gpu_usage'
+            index_name = 'node_ts_gpu_idx'
         else:
             return []
         
@@ -181,9 +184,9 @@ FROM
 	(
 	SELECT
 		(timestamp - :start) DIV :step AS bucket_idx,
-		SUBSTRING_INDEX(GROUP_CONCAT(gpu_usage ORDER BY timestamp ASC), ',', 1) AS avg_val
+		SUBSTRING_INDEX(GROUP_CONCAT({usage_field} ORDER BY timestamp ASC), ',', 1) AS avg_val
 	FROM
-		t_node_gpu_history_info FORCE INDEX (node_ts_gpu_idx)
+		{table.__tablename__} FORCE INDEX ({index_name})
 	WHERE
 		node = :node
 		AND timestamp >= :start
