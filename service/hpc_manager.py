@@ -205,7 +205,7 @@ ORDER BY
                     for row in data
                 ]
                                         
-                logger.info(f"get_history {history_type} 数据库降采样:  -> 采样后{len(data)}条, 间隔{interval}秒, 用时：{time.time() - start_timestampe:.3f}s")
+                logger.info(f"get_history {history_type} node:{self.node} start: {start_time} step: {interval} 数据库降采样:  -> 采样后{len(data)}条, 间隔{interval}秒, 用时：{time.time() - start_timestampe:.3f}s")
                 return data
             except Exception as e:
                 logger.error(f"获取节点{self.node}历史信息失败: {e}")
