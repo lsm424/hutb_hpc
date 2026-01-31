@@ -162,87 +162,50 @@ class Node:
             return []
         
         start_time = int((datetime.now() - timedelta(days=recent_days)).timestamp())
+        start_time = (start_time / 3600) * 3600  # 按照小时对其，一小时以内的查询sql一样就可以复用缓存
         
         with get_db_context_session() as session:
+            interval = max(1,  int(timedelta(days=recent_days).total_seconds() / max_points))
             # data = session.query(table).filter(and_(table.node == self.node, table.timestamp >= start_time)).order_by(table.timestamp.asc()).all()
             try:
-                # 只取时间范围，不 count，避免 25 万行级别上的全索引扫描
-                base_filter = and_(table.node == self.node, table.timestamp >= start_time)
-                stats_query = session.query(
-                    func.min(table.timestamp).label('min_ts'),
-                    func.max(table.timestamp).label('max_ts')
-                ).filter(base_filter).first()
-                
-                if not stats_query or stats_query.min_ts is None or stats_query.max_ts is None:
-                    return []
-                
-                min_ts = stats_query.min_ts
-                max_ts = stats_query.max_ts
-                time_span = max_ts - min_ts
-                # 用时间跨度和 max_points 判断是否需要降采样，无需 total_count
-                interval = max(1, int(time_span / max_points)) if time_span else 1
-                need_downsample = time_span > 0 and (time_span // interval) > max_points
-                
-                if need_downsample:
-                    # 生成目标时间点列表（最多 max_points 个）
-                    target_ts_list = [
-                        min_ts + i * interval
-                        for i in range(max_points)
-                        if min_ts + i * interval <= max_ts
-                    ]
-                    if not target_ts_list:
-                        return []
-                    tbl = table.__tablename__
-                    # 临时表 + LATERAL：每个目标时间点用索引做 ORDER BY timestamp LIMIT 1，避免全表/全索引扫描
-                    try:
-                        session.execute(text(
-                            "CREATE TEMPORARY TABLE IF NOT EXISTS _downsample_targets (target_ts INT PRIMARY KEY)"
-                        ))
-                        session.execute(text("TRUNCATE TABLE _downsample_targets"))
-                        # 单条 INSERT 多值，避免 2000 次参数 round-trip
-                        values_str = ",".join(f"({ts})" for ts in target_ts_list)
-                        session.execute(text(f"INSERT INTO _downsample_targets (target_ts) VALUES {values_str}"))
-                        # LATERAL + LIMIT 1 便于优化器做「每行一次索引查找」，需 MySQL 8.0.14+
-                        data = session.execute(
-                            text(f"""
-                                SELECT t.timestamp, t.{usage_field}
-                                FROM _downsample_targets tt
-                                INNER JOIN LATERAL (
-                                    SELECT timestamp, {usage_field}
-                                    FROM {tbl}
-                                    WHERE node = :node AND timestamp >= tt.target_ts
-                                    ORDER BY timestamp ASC
-                                    LIMIT 1
-                                ) t ON TRUE
-                                ORDER BY t.timestamp ASC
-                            """),
-                            {"node": self.node}
-                        ).fetchall()
-                    finally:
-                        session.execute(text("DROP TEMPORARY TABLE IF EXISTS _downsample_targets"))
+                data = session.execute(
+                # 解释为什么要用子查询：ROW_NUMBER() 是窗口函数，rn 是 select 阶段动态生成的别名，不能直接在同级 WHERE 子句使用，
+                # 因为 WHERE 在 SELECT 之前执行。必须用子查询先选出带 rn 的表，再在外层 where 过滤 rn=1。
+                # 
+                # 关于 limit：如果把 limit 放在子查询里，仅对子查询的原始行数做限制（不是降采样后的数据点，也不是最终的结果），
+                # 这样可能导致采样区间不完整或有遗漏，最终采样点不足 max_points。所以 limit 只能放到最外层，确保拿到足够的降采样点后再截断。
+                text(f"""SELECT
+	:start + bucket_idx * :step AS time_bucket,
+	avg_val
+FROM
+	(
+	SELECT
+		(timestamp - :start) DIV :step AS bucket_idx,
+		AVG(gpu_usage) AS avg_val
+	FROM
+		t_node_gpu_history_info FORCE INDEX (node_ts_gpu_idx)
+	WHERE
+		node = :node
+		AND timestamp >= :start
+	GROUP BY
+		(timestamp - :start) DIV :step ) t
+ORDER BY
+	time_bucket;
+                        """),
+                        {
+                            'node': self.node,
+                            'start': start_time,
+                            'step': interval,
+                        }
+                    ).fetchall()
                                             
-                    # 转换为字典格式
-                    data = [
-                        {'timestamp': row[0], usage_field: row[1]}
-                        for row in data
-                    ]
-                                            
-                    logger.info(f"get_history {history_type} 数据库降采样: 采样后{len(data)}条, 间隔{interval}秒, 用时：{time.time() - start_timestampe:.3f}s")
-                    return data
-                # 数据量不大，直接查询全部
-                data = session.query(table).filter(
-                    and_(table.node == self.node, table.timestamp >= start_time)
-                ).order_by(table.timestamp.asc()).all()
                 # 转换为字典格式
                 data = [
-                    {
-                        'timestamp': item.timestamp,
-                        usage_field: getattr(item, usage_field)
-                    }
-                    for item in data
+                    {'timestamp': row[0], usage_field: row[1]}
+                    for row in data
                 ]
-                
-                logger.info(f"get_history {history_type} 直接查询: 返回{len(data)}条, 用时：{time.time() - start_timestampe:.3f}s")
+                                        
+                logger.info(f"get_history {history_type} 数据库降采样:  -> 采样后{len(data)}条, 间隔{interval}秒, 用时：{time.time() - start_timestampe:.3f}s")
                 return data
             except Exception as e:
                 logger.error(f"获取节点{self.node}历史信息失败: {e}")
