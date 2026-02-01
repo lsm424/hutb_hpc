@@ -81,3 +81,21 @@ create table t_hpc_user_info (
     primary key (`id`),
     unique key (username)
 ) COMMENT='HPC用户信息表';
+
+
+set @start = 1769247047;
+set @step = 3600;
+set @node='xcn1';
+
+SELECT
+	@start + bucket_idx * @step AS time_bucket,
+	avg_val
+FROM
+	(
+	SELECT (timestamp - @start) DIV @step AS bucket_idx, SUBSTRING_INDEX(GROUP_CONCAT(cpu_usage ORDER BY timestamp ASC), ',', 1) AS avg_val
+	FROM t_node_cpu_history_info FORCE INDEX (node_ts_cpu_idx)
+	WHERE node = @node  
+	GROUP BY (timestamp - @start) DIV @step ) t
+ORDER BY
+	time_bucket;
+

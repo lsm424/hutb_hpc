@@ -179,12 +179,13 @@ class Node:
                 # 这样可能导致采样区间不完整或有遗漏，最终采样点不足 max_points。所以 limit 只能放到最外层，确保拿到足够的降采样点后再截断。
                 text(f"""SELECT
 	:start + bucket_idx * :step AS time_bucket,
-	avg_val
+	max_val
 FROM
 	(
 	SELECT
 		(timestamp - :start) DIV :step AS bucket_idx,
-		SUBSTRING_INDEX(GROUP_CONCAT({usage_field} ORDER BY timestamp ASC), ',', 1) AS avg_val
+		SUBSTRING_INDEX(GROUP_CONCAT({usage_field} ORDER BY timestamp ASC), ',', 1) AS avg_val,
+        max({usage_field}) as max_val
 	FROM
 		{table.__tablename__} FORCE INDEX ({index_name})
 	WHERE
