@@ -61,7 +61,7 @@ class TNodeCpuHistoryInfo(Base):
 class THpcUserInfo(Base):
     __tablename__ = 't_hpc_user_info'
     __table_args__ = {'comment': 'HPC用户信息表'}
-    serialize_only = ('id', 'hpc_id', 'username', 'realname', 'email', 'phone', 'role_name', 'status', 'register_time', 'created_at', 'updated_at')
+    serialize_only = ('id', 'hpc_id', 'username', 'realname', 'email', 'phone', 'role_name', 'status', 'register_time', 'recent_login_time', 'created_at', 'updated_at')
     id = Column(Integer, primary_key=True)
     hpc_id = Column(String(255), nullable=False, server_default=text("''"), comment='HPC ID')
     username = Column(String(255), nullable=False, server_default=text("''"), comment='用户名')
@@ -71,5 +71,6 @@ class THpcUserInfo(Base):
     role_name = Column(String(255), nullable=False, server_default=text("''"), comment='角色名称')
     status = Column(String(255), nullable=False, server_default=text("'0'"), comment='状态')
     register_time = Column(TIMESTAMP, nullable=False, server_default=text("CURRENT_TIMESTAMP"), comment='注册时间')
+    recent_login_time = Column(TIMESTAMP, nullable=False, server_default=text("CURRENT_TIMESTAMP"), comment='最近登录时间')
     created_at = Column(TIMESTAMP, nullable=False, server_default=text("CURRENT_TIMESTAMP"), comment='创建时间')
     updated_at = Column(TIMESTAMP, nullable=False, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"), comment='更新时间')

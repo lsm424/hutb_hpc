@@ -197,6 +197,18 @@ class HpcApi:
             return data
         return data['result']['records']
 
+    @check_login
+    def recent_login_date(self, username):
+        url = f'http://hpc.hutb.edu.cn/hpc-backend/sys/log/list?column=createTime&order=desc&pageNo=1&pageSize=10&keyWord={username}&logType=1&_t={int(time.time() * 1000)}'
+        data = self.session.get(url).json()
+        if data.get('code', '') != 0:
+            logger.error(f"获取HPC用户{username}最近登录时间失败，状态码：{data.get('code', '')}，响应内容：{data}")
+            return username, None
+        records = data['result']['records']
+        if not records:
+            return username, None
+        return username, max([item['createTime'] for item in records])
+
     # 简化版本，直接使用UTF-8编码的字节作为密钥和IV
     def _encrypt_username_simple(self, username):
         """

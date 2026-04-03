@@ -75,6 +75,7 @@ create table t_hpc_user_info (
     phone varchar(255) not null default '' comment '电话',
     role_name varchar(1024) not null default '' comment '角色名称',
     register_time TIMESTAMP not null comment '注册时间',
+    recent_login_time TIMESTAMP null comment '最近登录时间',
     status varchar(255) not null default '0' comment '状态',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',

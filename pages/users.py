@@ -17,6 +17,7 @@ columnDefs = [
     {"headerName": "手机号", "field": "phone", "sortable": False, "flex": 8},
     {"headerName": "角色", "field": "role_name", "sortable": True, "flex": 20},
     {"headerName": "注册时间", "field": "register_time", "sortable": True, "flex": 12},
+    {"headerName": "最近登录时间", "field": "recent_login_time", "sortable": True, "flex": 12},
     {"headerName": "状态", "field": "status_html", "cellRenderer": "markdown","sortable": True, "flex": 5},
     {"headerName": "作业", "field": "jobs", "cellRenderer": "markdown", "sortable": False, "flex": 5},
 ]

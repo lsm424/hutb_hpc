@@ -1,3 +1,13 @@
+'''
+Author: wadesmli
+Date: 2026-01-14 09:09:52
+LastEditors: wadesmli
+LastEditTime: 2026-04-03 09:58:09
+FilePath: main.py
+Description: 
+
+Copyright (c) 2026 by wadesmli, All Rights Reserved. 
+'''
 import dash
 from dash import html, dcc, Input, Output, State
 import dash_bootstrap_components as dbc
