@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(patent-disclosure-skill)",
+      "PowerShell(pip install *)",
+      "PowerShell(python \"C:\\\\Users\\\\35998\\\\.claude\\\\skills\\\\patent-disclosure-skill\\\\tools\\\\docx_to_md.py\" --input \"D:\\\\work\\\\hpc\\\\docs\\\\算力平台资源申请表.docx\" --output \"D:\\\\work\\\\hpc\\\\docs\\\\算力平台资源申请表.md\")",
+      "PowerShell(chcp 65001 *)"
+    ]
+  }
+}

@@ -100,3 +100,20 @@ FROM
 ORDER BY
 	time_bucket;
 
+CREATE TABLE t_account_pool (
+    id INT(11) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    userid VARCHAR(255) NOT NULL DEFAULT '' COMMENT '用户ID',
+    username VARCHAR(255) NOT NULL DEFAULT '' COMMENT '账号名称',
+    realname VARCHAR(255) NOT NULL DEFAULT '' COMMENT '真实姓名/昵称',
+    password VARCHAR(255) NOT NULL DEFAULT '' COMMENT '密码',
+    status int(11) NOT NULL DEFAULT '0' COMMENT '状态: 1-正常, 2-冻结',
+    tag VARCHAR(255) DEFAULT NULL COMMENT '标签，如: 2025春-C++',
+    assigned_to VARCHAR(255) DEFAULT NULL COMMENT '分配对象(学生姓名)',
+    assigned_at TIMESTAMP NULL DEFAULT NULL COMMENT '分配时间',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_username (username),
+    INDEX idx_status (status),
+    INDEX idx_tag (tag)
+) COMMENT='账号池表';

@@ -1,0 +1,531 @@
+{
+  "exp1_cold_vs_hot": {
+    "cold": [
+      {
+        "time_ms": 65.33,
+        "rows": 100,
+        "hit_rate": 98.24,
+        "read_requests": 1307,
+        "disk_reads": 23
+      },
+      {
+        "time_ms": 28.31,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 28.3,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      }
+    ],
+    "hot": [
+      {
+        "time_ms": 28.06,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 29.2,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.71,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.29,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 28.85,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 26.89,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.35,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 28.33,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.3,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.13,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      }
+    ]
+  },
+  "exp2_aligned_vs_unaligned": {
+    "unaligned": [
+      {
+        "time_ms": 29.48,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1134,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.27,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1134,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 29.3,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1134,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 26.94,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1134,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 29.26,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1133,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 28.0,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1133,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.16,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1133,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 56.86,
+        "rows": 100,
+        "hit_rate": 98.31,
+        "read_requests": 1301,
+        "disk_reads": 22
+      },
+      {
+        "time_ms": 29.93,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1133,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 26.67,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1133,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 31.27,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1133,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 26.29,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1133,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 29.73,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1133,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.88,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1133,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.53,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1133,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.01,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1133,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 28.96,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1133,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.27,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1133,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 26.51,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1133,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 33.16,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1133,
+        "disk_reads": 0
+      }
+    ],
+    "aligned": [
+      {
+        "time_ms": 27.06,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.99,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 26.82,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 28.47,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.83,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 26.43,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 28.12,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 28.88,
+        "rows": 100,
+        "hit_rate": 99.91,
+        "read_requests": 1139,
+        "disk_reads": 1
+      },
+      {
+        "time_ms": 28.95,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.75,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 28.0,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 26.73,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.13,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.26,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 26.97,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.82,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 28.92,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 26.65,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 25.5,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 28.96,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      }
+    ]
+  },
+  "exp3_buffer_pressure": {
+    "same_range": [
+      {
+        "time_ms": 28.85,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.86,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 28.45,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 29.0,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.36,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 25.59,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.87,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 27.73,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 28.37,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 28.17,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      }
+    ],
+    "different_range": [
+      {
+        "time_ms": 28.07,
+        "rows": 100,
+        "hit_rate": 100.0,
+        "read_requests": 1138,
+        "disk_reads": 0
+      },
+      {
+        "time_ms": 28.77,
+        "rows": 101,
+        "hit_rate": 99.91,
+        "read_requests": 1146,
+        "disk_reads": 1
+      },
+      {
+        "time_ms": 28.11,
+        "rows": 102,
+        "hit_rate": 99.91,
+        "read_requests": 1153,
+        "disk_reads": 1
+      },
+      {
+        "time_ms": 29.99,
+        "rows": 102,
+        "hit_rate": 99.91,
+        "read_requests": 1159,
+        "disk_reads": 1
+      },
+      {
+        "time_ms": 29.48,
+        "rows": 103,
+        "hit_rate": 99.91,
+        "read_requests": 1166,
+        "disk_reads": 1
+      },
+      {
+        "time_ms": 29.52,
+        "rows": 103,
+        "hit_rate": 99.91,
+        "read_requests": 1173,
+        "disk_reads": 1
+      },
+      {
+        "time_ms": 28.82,
+        "rows": 104,
+        "hit_rate": 99.92,
+        "read_requests": 1179,
+        "disk_reads": 1
+      },
+      {
+        "time_ms": 28.35,
+        "rows": 105,
+        "hit_rate": 99.92,
+        "read_requests": 1186,
+        "disk_reads": 1
+      },
+      {
+        "time_ms": 29.16,
+        "rows": 105,
+        "hit_rate": 99.92,
+        "read_requests": 1193,
+        "disk_reads": 1
+      },
+      {
+        "time_ms": 28.91,
+        "rows": 106,
+        "hit_rate": 99.92,
+        "read_requests": 1199,
+        "disk_reads": 1
+      }
+    ]
+  }
+}
