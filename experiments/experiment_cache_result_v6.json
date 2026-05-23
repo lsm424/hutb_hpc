@@ -1,0 +1,14 @@
+{
+  "exp1": {
+    "unaligned_hits": 0,
+    "aligned_hits": 9
+  },
+  "exp2_cover_index": {
+    "cover_hot_ms": 615.5133333333332,
+    "no_cover_hot_ms": 761.69
+  },
+  "exp3_vs_window": {
+    "our_hot_ms": 620.6855555555555,
+    "window_hot_ms": 845.8188888888889
+  }
+}
