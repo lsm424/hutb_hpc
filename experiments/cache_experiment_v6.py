@@ -2,12 +2,12 @@
 专利验证实验 v6：三大创新集成验证
 
 在 v5 三个实验的基础上融入两项新创新：
-  创新2: 双维度自适应桶划分（时间上限 + 累计波动） — 纯SQL session变量
-  创新3: 桶内4点多线段特征提取（first / min / max / last） — SQL GROUP BY
+  创新2: 双维度自适应桶划分（时间上限 + 累计波动）
+  创新3: 桶内4点多线段特征提取（first / min / max / last）
 
 实验设计（同 v5 结构）：
   实验1：时间对齐 vs 未对齐（创新1 — 应用层缓存复用对比）
-  实验2：覆盖索引 vs 非覆盖索引（配套 — 索引效果对比）
+  实验2：覆盖索引 vs 非覆盖索引 vs Python后处理（配套 — 索引+优化效果对比）
   实验3：GROUP BY vs 窗口函数（配套 — 流式聚合效果对比）
   实验4：EXPLAIN 执行计划分析
 """
@@ -109,25 +109,22 @@ def build_no_cover_query(now_ts):
     return _adaptive_query(_aligned_start(now_ts), False)
 
 
-def _build_adaptive_window_query(now_ts):
+def _build_adaptive_row_number_query(now_ts):
     """
-    自适应桶 + ROW_NUMBER 窗口函数（与 GROUP BY 流式聚合对比，同桶划分）
+    自适应桶 + 纯 ROW_NUMBER 采样（不用 GROUP BY，与流式聚合对比）。
     内层: 与 _adaptive_query 完全相同的自适应桶逻辑
-    外层: ROW_NUMBER + CASE WHEN 提取 4 点（产生临时表 + filesort）
+    外层: ROW_NUMBER() PARTITION BY bucket_start → WHERE rn=1 每桶取首个点
+    效果: 产生临时表 + filesort（每个分区内排序），区别于 GROUP BY 流式聚合
     """
     start = _aligned_start(now_ts)
     return f"""
-        SELECT
-            bucket_start,
-            MAX(CASE WHEN rn_asc = 1 THEN gpu_usage END) AS first_val,
-            MIN(gpu_usage) AS min_val,
-            MAX(gpu_usage) AS max_val,
-            MAX(CASE WHEN rn_desc = 1 THEN gpu_usage END) AS last_val
+        SELECT bucket_start, gpu_usage
         FROM (
             SELECT
                 bucket_start, gpu_usage,
-                ROW_NUMBER() OVER (PARTITION BY bucket_start ORDER BY `timestamp` ASC) AS rn_asc,
-                ROW_NUMBER() OVER (PARTITION BY bucket_start ORDER BY `timestamp` DESC) AS rn_desc
+                ROW_NUMBER() OVER (
+                    PARTITION BY bucket_start ORDER BY `timestamp` ASC
+                ) AS rn
             FROM (
                 SELECT
                     `timestamp`, gpu_usage,
@@ -153,8 +150,8 @@ def _build_adaptive_window_query(now_ts):
                 WHERE node = '{NODE}' AND `timestamp` >= {start}
                 ORDER BY `timestamp` ASC
             ) AS _adaptive
-        ) AS _windowed
-        GROUP BY bucket_start
+        ) AS _ranked
+        WHERE rn = 1
         ORDER BY bucket_start
     """
 
@@ -168,6 +165,92 @@ def run_query(cursor, sql):
     rows = cursor.fetchall()
     elapsed = (time.time() - t0) * 1000
     return rows, round(elapsed, 2)
+
+
+# ==================== Python 后处理管线（对比组：避免 session 变量开销） ====================
+
+def _build_raw_fetch_query(now_ts):
+    """纯索引取原始数据，无聚合，无 session 变量"""
+    start = _aligned_start(now_ts)
+    return f"""
+        SELECT `timestamp`, gpu_usage
+        FROM t_node_gpu_history_info
+        FORCE INDEX (node_ts_gpu_idx)
+        WHERE node = '{NODE}' AND `timestamp` >= {start}
+        ORDER BY `timestamp` ASC
+    """
+
+
+def _adaptive_partition_python(rows, max_sec, threshold, min_win):
+    """Python 实现双维度自适应桶划分（O(n) 单次遍历）"""
+    if not rows:
+        return {}
+    buckets = {}
+    bucket_start = rows[0][0]
+    current = []
+    bucket_min = bucket_max = rows[0][1]
+
+    for ts, val in rows:
+        split = False
+        if current:
+            if (ts - bucket_start) > max_sec:
+                split = True
+            elif (ts - bucket_start) > min_win and (bucket_max - bucket_min) > threshold:
+                split = True
+
+        if split:
+            buckets[bucket_start] = current
+            bucket_start = ts
+            current = []
+            bucket_min = bucket_max = val
+
+        current.append((ts, val))
+        if val < bucket_min:
+            bucket_min = val
+        if val > bucket_max:
+            bucket_max = val
+
+    if current:
+        buckets[bucket_start] = current
+    return buckets
+
+
+def _extract_4point_python(bucket_data):
+    """Python 实现 4 点提取"""
+    s = sorted(bucket_data, key=lambda x: x[0])
+    mn = min(s, key=lambda x: x[1])
+    mx = max(s, key=lambda x: x[1])
+    return (
+        round(s[0][1], 2),   # first_val
+        round(mn[1], 2),     # min_val
+        round(mx[1], 2),     # max_val
+        round(s[-1][1], 2),  # last_val
+    )
+
+
+def run_pipeline_python(cursor, now_ts):
+    """
+    Python 管线：SQL 取原始数据 → Python 自适应桶 → Python 4点提取
+    返回: (result_rows, total_ms)
+    result_rows = [(bucket_start, first_val, min_val, max_val, last_val), ...]
+    """
+    sql = _build_raw_fetch_query(now_ts)
+    t0 = time.time()
+    cursor.execute(sql)
+    raw_rows = cursor.fetchall()
+    db_ms = (time.time() - t0) * 1000
+
+    buckets = _adaptive_partition_python(
+        raw_rows, MAX_BUCKET_SEC, FLUCTUATION_THRESHOLD, MIN_WINDOW_SEC
+    )
+
+    result = []
+    for bs in sorted(buckets):
+        fv, mn, mx, lv = _extract_4point_python(buckets[bs])
+        result.append((bs, fv, mn, mx, lv))
+
+    total_ms = round((time.time() - t0) * 1000, 2)
+    return result, total_ms, round(db_ms, 2)
 
 
 # ==================== 基础设施 ====================
@@ -315,8 +398,8 @@ def experiment1_aligned_vs_unaligned():
 
 
 def experiment2_cover_index():
-    """实验2：覆盖索引 vs 非覆盖索引"""
-    print_sep("实验2：覆盖索引 vs 非覆盖索引（自适应桶+4点）")
+    """实验2：覆盖索引 vs 非覆盖索引 vs Python后处理"""
+    print_sep("实验2：覆盖索引 vs 非覆盖索引 vs Python后处理（自适应桶+4点）")
 
     conn = get_conn()
     cursor = conn.cursor()
@@ -328,31 +411,59 @@ def experiment2_cover_index():
     print(f"\n  [数据] node='{NODE}': {total}条")
     results = {}
 
-    for cover, label in [(True, '覆盖索引 (node, ts, val)'), (False, '非覆盖索引 (node, ts)')]:
-        restart_mysql()
-        conn = get_conn()
-        cursor = conn.cursor()
+    # 组1: 覆盖索引 + 纯SQL自适应桶
+    restart_mysql()
+    conn = get_conn()
+    cursor = conn.cursor()
+    print(f"\n  --- 覆盖索引 + SQL自适应桶 (node, ts, val) ---")
+    sql = build_aligned_query(now_ts, cover_index=True)
+    cover_results = []
+    for i in range(10):
+        rows, db_ms = run_query(cursor, sql)
+        cover_results.append({'time_ms': db_ms, 'buckets': len(rows)})
+        tag = "冷查询" if i == 0 else "热查询"
+        print(f"    {tag} #{i+1}: {db_ms:>8.1f}ms, {len(rows)} 桶, {len(rows)*4} 点")
+    results['cover_sql'] = cover_results
+    cursor.close()
+    conn.close()
 
-        print(f"\n  --- {label} ---")
-        sql = build_aligned_query(now_ts, cover_index=cover) if cover else build_no_cover_query(now_ts)
-        round_results = []
+    # 组2: 非覆盖索引 + 纯SQL自适应桶
+    restart_mysql()
+    conn = get_conn()
+    cursor = conn.cursor()
+    print(f"\n  --- 非覆盖索引 + SQL自适应桶 (node, ts) ---")
+    sql = build_no_cover_query(now_ts)
+    no_cover_results = []
+    for i in range(10):
+        rows, db_ms = run_query(cursor, sql)
+        no_cover_results.append({'time_ms': db_ms, 'buckets': len(rows)})
+        tag = "冷查询" if i == 0 else "热查询"
+        print(f"    {tag} #{i+1}: {db_ms:>8.1f}ms, {len(rows)} 桶, {len(rows)*4} 点")
+    results['no_cover_sql'] = no_cover_results
+    cursor.close()
+    conn.close()
 
-        for i in range(10):
-            rows, db_ms = run_query(cursor, sql)
-            round_results.append({'time_ms': db_ms, 'buckets': len(rows)})
-            tag = "冷查询" if i == 0 else "热查询"
-            print(f"    {tag} #{i+1}: {db_ms:>8.1f}ms, {len(rows)} 桶, {len(rows)*4} 点")
-
-        results['cover' if cover else 'no_cover'] = round_results
-        cursor.close()
-        conn.close()
+    # 组3: 覆盖索引 + Python后处理（SQL只取原始数据，无session变量/GROUP_CONCAT开销）
+    restart_mysql()
+    conn = get_conn()
+    cursor = conn.cursor()
+    print(f"\n  --- 覆盖索引 + Python后处理 (SQL取数→Python自适应桶+4点) ---")
+    py_results = []
+    for i in range(10):
+        result, total_ms, db_ms = run_pipeline_python(cursor, now_ts)
+        py_results.append({'time_ms': total_ms, 'db_ms': db_ms, 'buckets': len(result)})
+        tag = "冷查询" if i == 0 else "热查询"
+        print(f"    {tag} #{i+1}: {total_ms:>8.1f}ms (DB:{db_ms}ms + Python:{total_ms-db_ms:.0f}ms), {len(result)} 桶, {len(result)*4} 点")
+    results['cover_python'] = py_results
+    cursor.close()
+    conn.close()
 
     return results
 
 
 def experiment3_vs_window_function():
     """实验3：流式聚合 vs 窗口函数（均使用自适应桶，控制唯一变量）"""
-    print_sep("实验3：GROUP BY流式聚合 vs ROW_NUMBER窗口函数（均自适应桶）")
+    print_sep("实验3：GROUP BY流式聚合 vs ROW_NUMBER采样（均自适应桶，同桶划分）")
 
     conn = get_conn()
     cursor = conn.cursor()
@@ -365,14 +476,14 @@ def experiment3_vs_window_function():
     results = {}
 
     for kind, label, builder in [
-        ('our', 'GROUP BY流式聚合', lambda: build_aligned_query(now_ts)),
-        ('window', 'ROW_NUMBER窗口函数', lambda: _build_adaptive_window_query(now_ts)),
+        ('our', 'GROUP BY流式聚合(4点提取)', lambda: build_aligned_query(now_ts)),
+        ('window', 'ROW_NUMBER采样(每桶1点)', lambda: _build_adaptive_row_number_query(now_ts)),
     ]:
         restart_mysql()
         conn = get_conn()
         cursor = conn.cursor()
 
-        print(f"\n  --- {label}（同自适应桶，均提取4点） ---")
+        print(f"\n  --- {label} ---")
         sql = builder()
         round_results = []
 
@@ -402,7 +513,7 @@ def experiment4_explain():
     for name, sql in [
         ('本方案(cover index)', build_aligned_query(now_ts, True)),
         ('非覆盖索引', build_no_cover_query(now_ts)),
-        ('窗口函数(自适应桶)', _build_adaptive_window_query(now_ts)),
+        ('窗口函数(自适应桶)', _build_adaptive_row_number_query(now_ts)),
     ]:
         print(f"\n  --- {name} ---")
         cursor.execute(f"EXPLAIN {sql}")
@@ -432,10 +543,10 @@ def print_summary(exp1, exp2, exp3):
     al_first_db = al[0]['time_ms']
     al_buckets = al[0]['buckets']
 
-    cover_hot = avg(exp2['cover'], 'time_ms', skip=1)
-    no_cover_hot = avg(exp2['no_cover'], 'time_ms', skip=1)
-    cover_first = exp2['cover'][0]['time_ms']
-    no_cover_first = exp2['no_cover'][0]['time_ms']
+    cover_sql_hot = avg(exp2['cover_sql'], 'time_ms', skip=1)
+    no_cover_sql_hot = avg(exp2['no_cover_sql'], 'time_ms', skip=1)
+    cover_py_hot = avg(exp2['cover_python'], 'time_ms', skip=1)
+    cover_py_first = exp2['cover_python'][0]['time_ms']
 
     our_hot = avg(exp3['our'], 'time_ms', skip=1)
     window_hot = avg(exp3['window'], 'time_ms', skip=1)
@@ -457,7 +568,8 @@ def print_summary(exp1, exp2, exp3):
 ║    每桶4点(first/min/max/last), 共~{al_buckets*4}点, 3线段还原桶内趋势                         ║
 ║                                                                              ║
 ║  配套手段对比:                                                                ║
-║    覆盖索引热查询: {cover_hot:.0f}ms vs 非覆盖: {no_cover_hot:.0f}ms (加速 {no_cover_hot/cover_hot:.1f}x)       ║
+║    覆盖索引(SQL版): {cover_sql_hot:.0f}ms vs 非覆盖(SQL版): {no_cover_sql_hot:.0f}ms (索引加速 {no_cover_sql_hot/cover_sql_hot:.1f}x)  ║
+║    覆盖索引(Python版): {cover_py_hot:.0f}ms (vs SQL版 {cover_sql_hot:.0f}ms, 加速 {cover_sql_hot/cover_py_hot:.1f}x)    ║
 ║    GROUP BY流式:  {our_hot:.0f}ms vs 窗口函数: {window_hot:.0f}ms (加速 {window_hot/our_hot:.1f}x)           ║
 ║                                                                              ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
@@ -467,8 +579,9 @@ def print_summary(exp1, exp2, exp3):
     print(f"  创新1: 对齐后缓存命中率 {al_hits*10}%, 数据库仅服务首次查询")
     print(f"  创新2: 自适应桶 ~{al_buckets}个, 桶密度随波动自适应")
     print(f"  创新3: 每桶4点, 3线段保留趋势形态")
-    print(f"  覆盖索引: 加速 {no_cover_hot/cover_hot:.1f}x")
-    print(f"  流式聚合 vs 窗口函数: 加速 {window_hot/our_hot:.1f}x")
+    print(f"  覆盖索引(SQL版)加速: {no_cover_sql_hot/cover_sql_hot:.1f}x")
+    print(f"  Python后处理加速(vs SQL版): {cover_sql_hot/cover_py_hot:.1f}x")
+    print(f"  GROUP BY vs ROW_NUMBER: {window_hot/our_hot:.1f}x")
 
 
 def main():
@@ -506,8 +619,9 @@ def main():
             'aligned_hits': sum(1 for r in exp1['aligned'] if r['cached']),
         },
         'exp2_cover_index': {
-            'cover_hot_ms': sum(r['time_ms'] for r in exp2['cover'][1:]) / 9,
-            'no_cover_hot_ms': sum(r['time_ms'] for r in exp2['no_cover'][1:]) / 9,
+            'cover_sql_hot_ms': sum(r['time_ms'] for r in exp2['cover_sql'][1:]) / 9,
+            'no_cover_sql_hot_ms': sum(r['time_ms'] for r in exp2['no_cover_sql'][1:]) / 9,
+            'cover_python_hot_ms': sum(r['time_ms'] for r in exp2['cover_python'][1:]) / 9,
         },
         'exp3_vs_window': {
             'our_hot_ms': sum(r['time_ms'] for r in exp3['our'][1:]) / 9,

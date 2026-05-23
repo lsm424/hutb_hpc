@@ -4,11 +4,12 @@
     "aligned_hits": 9
   },
   "exp2_cover_index": {
-    "cover_hot_ms": 615.5133333333332,
-    "no_cover_hot_ms": 761.69
+    "cover_sql_hot_ms": 579.7822222222222,
+    "no_cover_sql_hot_ms": 702.9499999999999,
+    "cover_python_hot_ms": 2300.6111111111113
   },
   "exp3_vs_window": {
-    "our_hot_ms": 620.6855555555555,
-    "window_hot_ms": 845.8188888888889
+    "our_hot_ms": 612.87,
+    "window_hot_ms": 762.3933333333334
   }
 }
