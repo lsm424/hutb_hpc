@@ -4,7 +4,14 @@
       "Skill(patent-disclosure-skill)",
       "PowerShell(pip install *)",
       "PowerShell(python \"C:\\\\Users\\\\35998\\\\.claude\\\\skills\\\\patent-disclosure-skill\\\\tools\\\\docx_to_md.py\" --input \"D:\\\\work\\\\hpc\\\\docs\\\\算力平台资源申请表.docx\" --output \"D:\\\\work\\\\hpc\\\\docs\\\\算力平台资源申请表.md\")",
-      "PowerShell(chcp 65001 *)"
+      "PowerShell(chcp 65001 *)",
+      "WebFetch(domain:www.doubao.com)",
+      "PowerShell(Get-Item *)",
+      "PowerShell(python -c \"import ast; ast.parse\\(open\\('d:/work/hpc/experiments/cache_experiment_v6.py'\\).read\\(\\)\\); print\\('语法检查通过'\\)\")",
+      "PowerShell(python -c \"import ast; ast.parse\\(open\\('d:/work/hpc/experiments/cache_experiment_v6.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "PowerShell(python -c \"import ast; tree=ast.parse\\(open\\('d:/work/hpc/experiments/cache_experiment_v6.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\); print\\([n.name for n in ast.walk\\(tree\\) if isinstance\\(n, ast.FunctionDef\\)]\\)\")",
+      "PowerShell(python \"d:/work/hpc/experiments/cache_experiment_v6.py\")",
+      "PowerShell($env:PYTHONIOENCODING='utf-8'; python \"d:/work/hpc/experiments/cache_experiment_v6.py\")"
     ]
   }
 }
