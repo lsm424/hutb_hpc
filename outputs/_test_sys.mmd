@@ -1,0 +1,34 @@
+flowchart TB
+  subgraph 数据写入层["数据写入层"]
+    direction LR
+    A["监控数据采集代理<br/>(各计算节点)"]
+  end
+
+  subgraph 降采样处理层["降采样处理层（本发明核心）"]
+    direction LR
+    B["桶状态维护模块<br/>(创新1: 增量双维度判定状态机)"]
+    C["特征提取模块<br/>(创新2: 4点特征提取)"]
+  end
+
+  subgraph 存储层["存储层（通用数据存储系统）"]
+    direction LR
+    D["时序原始数据存储<br/>(entity_id, ts, value)"]
+    E["降采样结果存储<br/>(entity_id, bucket_start, bucket_end,<br/>first_val, min_val, min_ts, max_val, max_ts, last_val)"]
+    F["索引/排序键<br/>(entity_id, ts/bucket_start)"]
+  end
+
+  subgraph 查询与渲染层["查询与渲染层"]
+    direction LR
+    G["查询服务<br/>(直接读取降采样结果)"]
+    H["前端渲染<br/>(每桶3线段多段线)"]
+  end
+
+  A -->|"定时写入原始数据"| D
+  D -->|"逐条触发增量判定"| B
+  B -->|"双维度判定<br/>时间维度: Ti-T0>Tmax?<br/>波动维度: (Ti-T0>Tmin) AND (Vmax-Vmin>Δ)?"| B
+  B -->|"桶闭合时输出桶信息"| C
+  C -->|"写入 first/min/max/last + min_ts/max_ts"| E
+  F --> D
+  F --> E
+  G -->|"SELECT entity_id, bucket_start范围"| E
+  G --> H

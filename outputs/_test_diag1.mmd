@@ -1,0 +1,19 @@
+flowchart TD
+  W1["新数据到达<br/>(entity_id, timestamp, value)"]
+  W2["查询当前开口桶状态<br/>key = entity_id"]
+  W3{"当前开口桶<br/>是否存在?"}
+  W4["创建新开口桶<br/>bucket_start = timestamp<br/>bucket_min = bucket_max = value<br/>first_val = value<br/>min_ts = max_ts = timestamp"]
+  W5["更新桶累计状态<br/>IF value < bucket_min:<br/>  bucket_min=value, min_ts=timestamp<br/>IF value > bucket_max:<br/>  bucket_max=value, max_ts=timestamp"]
+  W6{"条件1:<br/>timestamp - bucket_start<br/>＞ max_bucket_sec ？"}
+  W7{"条件2:<br/>timestamp-bucket_start ＞ min_window_sec<br/>且 bucket_max-bucket_min<br/>＞ fluctuation_threshold ？"}
+  W8["闭合当前桶<br/>输出8字段至降采样结果<br/>bucket_end = timestamp<br/>last_val = value<br/>重置状态机（新开口桶）"]
+  W9["等待下一条数据"]
+
+  W1 --> W2 --> W3
+  W3 -->|"否"| W4 --> W9
+  W3 -->|"是"| W5 --> W6
+  W6 -->|"是"| W8 --> W9
+  W6 -->|"否"| W7
+  W7 -->|"是"| W8
+  W7 -->|"否"| W9
+  W9 -->|"下一条"| W1
