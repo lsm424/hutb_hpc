@@ -1,4 +1,4 @@
-from dash import html
+from dash import html, dcc
 from dash_bootstrap_components import Input
 
 def create_header(title="HUTB HPC Cluster"):
@@ -30,6 +30,14 @@ def create_header(title="HUTB HPC Cluster"):
                             html.Span(className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full")
                         ],
                         className="w-8 h-8 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative"
+                    ),
+                    html.A(
+                        [
+                            html.I(className="fa-solid fa-right-from-bracket text-gray-400 text-sm mr-2"),
+                            html.Span("退出", className="text-gray-400 text-sm")
+                        ],
+                        href="/logout",
+                        className="flex items-center gap-1 bg-gray-800 hover:bg-gray-700 rounded px-3 py-1.5 transition-colors cursor-pointer no-underline"
                     )
                 ],
                 className="flex items-center gap-4"
