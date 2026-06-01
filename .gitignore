@@ -4,3 +4,5 @@
 test.py
 *.pid
 */mysql/*
+*.db
+docs/experiments_old/mysql/*

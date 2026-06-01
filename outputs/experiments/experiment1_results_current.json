@@ -1,0 +1,281 @@
+{
+  "generated_at": "2026-06-02T17:15:19",
+  "db_path": "experiment1.db",
+  "downsampler_config": {
+    "tmax": 1800,
+    "tmin": 60,
+    "alpha": 0.4,
+    "f_initial": 50,
+    "f_min": 5.0
+  },
+  "protocol": {
+    "fair_budget": {
+      "label": "1天查询",
+      "duration_hours": 24.0,
+      "duration_days": 1.0,
+      "fraction_of_full_range": "1/7",
+      "description": "在前1天查询窗口内按相同输出预算比较趋势保真"
+    },
+    "cross_range_fixed_param": {
+      "label": "7天全程查询",
+      "duration_hours": 168,
+      "duration_days": 7.0,
+      "fixed_parameter_source": "1天查询",
+      "description": "在7天全程查询中沿用1天查询确定的外部方法参数"
+    }
+  },
+  "metrics": {
+    "CPU": {
+      "metric_name": "CPU使用率",
+      "artifacts": {
+        "main_plot": "plots/experiment1_cpucpu.png",
+        "fair_budget_plot": "plots/experiment1_external_fair_cpucpu.png",
+        "cross_range_plot": "plots/experiment1_external_unified_cpucpu.png"
+      },
+      "summary": {
+        "total_points": 120960,
+        "total_buckets": 441,
+        "compression_ratio": 274.2857142857143,
+        "visual_compression_ratio": 68.57142857142857,
+        "f_final": 46.797834420782834,
+        "correlation": 0.6971069004846667,
+        "nrmse": 0.28648451449653306
+      },
+      "adaptive_behavior": {
+        "convergence_buckets": 13,
+        "is_stable": true,
+        "f_stable_cv": 0.026857403097776067,
+        "avg_bucket_width": 1371.4172335600906,
+        "median_bucket_width": 1790.0,
+        "fluctuation_ratio": 0.5034013605442177,
+        "tmax_ratio": 0.4943310657596372
+      },
+      "performance": {
+        "process_time_ms": 4235.505899996497,
+        "query_speed_ms": 1.4226436614990234,
+        "write_latency": {
+          "mean_ms": 0.005602999735856429,
+          "std_ms": 0.0035829169439499826,
+          "max_ms": 0.022899999748915434,
+          "min_ms": 0.0017999991541728377
+        }
+      },
+      "robustness": {
+        "spike_filter_rate": 0.0,
+        "noise_robustness": {
+          "SNR_0.1": 1.8005921046345388,
+          "SNR_0.2": 1.5998691900907567,
+          "SNR_0.5": 0.46308088686469395
+        }
+      },
+      "fair_budget_comparisons": {
+        "patent": {
+          "name": "本专利方法",
+          "category": "external",
+          "output_points": 246,
+          "total_buckets": 62,
+          "compression_ratio": 70.2439024390244,
+          "correlation": 0.6941449082341449,
+          "nrmse": 0.2886787134704874,
+          "write_time_ms": 4235.505899996497,
+          "query_time_ms": 1.4226436614990234,
+          "tuning_cost": "统一参数，无需额外调参",
+          "note": "1天查询窗口内直接读取写时生成的降采样结果"
+        },
+        "lttb": {
+          "name": "查询侧LTTB",
+          "category": "external",
+          "output_points": 246,
+          "total_buckets": 0,
+          "compression_ratio": 70.2439024390244,
+          "correlation": 0.4267744053020464,
+          "nrmse": 0.5476069652222719,
+          "write_time_ms": 0.0,
+          "query_time_ms": 8.511399995768443,
+          "tuning_cost": "需预设输出点数(246)",
+          "note": "1天查询阶段扫描原始序列后再降采样"
+        },
+        "fixed_window": {
+          "name": "固定窗口聚合",
+          "category": "external",
+          "output_points": 248,
+          "total_buckets": 62,
+          "compression_ratio": 69.6774193548387,
+          "correlation": 0.6634185105493193,
+          "nrmse": 0.4082228261171531,
+          "write_time_ms": 0.0,
+          "query_time_ms": 2.219000001787208,
+          "tuning_cost": "需预设窗口数(62)",
+          "note": "1天查询中，固定窗口数量与本专利方法的桶数对齐"
+        }
+      },
+      "cross_range_fixed_param_comparisons": {
+        "patent": {
+          "name": "本专利方法",
+          "category": "external",
+          "output_points": 1764,
+          "total_buckets": 441,
+          "compression_ratio": 68.57142857142857,
+          "correlation": 0.6971069004846667,
+          "nrmse": 0.28648451449653306,
+          "write_time_ms": 4235.505899996497,
+          "query_time_ms": 1.4226436614990234,
+          "tuning_cost": "统一参数，无需额外调参",
+          "note": "7天全程查询窗口内直接读取写时生成的降采样结果"
+        },
+        "lttb": {
+          "name": "查询侧LTTB",
+          "category": "external",
+          "output_points": 246,
+          "total_buckets": 0,
+          "compression_ratio": 491.7073170731707,
+          "correlation": 0.07510264050472609,
+          "nrmse": 0.7429482947218542,
+          "write_time_ms": 0.0,
+          "query_time_ms": 52.10460000671446,
+          "tuning_cost": "需预设输出点数(246)",
+          "note": "查询范围扩展到7天全程，但仍沿用1天查询确定的输出点数"
+        },
+        "fixed_window": {
+          "name": "固定窗口聚合",
+          "category": "external",
+          "output_points": 248,
+          "total_buckets": 62,
+          "compression_ratio": 487.741935483871,
+          "correlation": 0.14755101937683404,
+          "nrmse": 0.6440759033830986,
+          "write_time_ms": 0.0,
+          "query_time_ms": 7.1789000066928566,
+          "tuning_cost": "固定窗口数(62)，查询范围扩大后不调整",
+          "note": "查询范围扩展到7天全程，但仍沿用1天查询确定的桶数"
+        }
+      }
+    },
+    "Memory": {
+      "metric_name": "内存使用量",
+      "artifacts": {
+        "main_plot": "plots/experiment1_内存memory.png",
+        "fair_budget_plot": "plots/experiment1_external_fair_内存memory.png",
+        "cross_range_plot": "plots/experiment1_external_unified_内存memory.png"
+      },
+      "summary": {
+        "total_points": 120960,
+        "total_buckets": 452,
+        "compression_ratio": 267.6106194690266,
+        "visual_compression_ratio": 66.90265486725664,
+        "f_final": 6.70153871161341,
+        "correlation": 0.9994643265085668,
+        "nrmse": 0.029830649519363723
+      },
+      "adaptive_behavior": {
+        "convergence_buckets": 28,
+        "is_stable": true,
+        "f_stable_cv": 0.3168057422158095,
+        "avg_bucket_width": 1338.0420353982302,
+        "median_bucket_width": 1805.0,
+        "fluctuation_ratio": 0.2942477876106195,
+        "tmax_ratio": 0.7035398230088495
+      },
+      "performance": {
+        "process_time_ms": 2228.863399999682,
+        "query_speed_ms": 1.5223026275634766,
+        "write_latency": {
+          "mean_ms": 0.003097999870078638,
+          "std_ms": 0.0031377689818620574,
+          "max_ms": 0.0219999928958714,
+          "min_ms": 0.0013999961083754897
+        }
+      },
+      "robustness": {
+        "spike_filter_rate": 100.0,
+        "noise_robustness": {
+          "SNR_0.1": 18.816849272473547,
+          "SNR_0.2": 12.893840144134693,
+          "SNR_0.5": 5.103155438479288
+        }
+      },
+      "fair_budget_comparisons": {
+        "patent": {
+          "name": "本专利方法",
+          "category": "external",
+          "output_points": 238,
+          "total_buckets": 60,
+          "compression_ratio": 72.60504201680672,
+          "correlation": 0.9951188385021756,
+          "nrmse": 0.5785122740030708,
+          "write_time_ms": 2228.863399999682,
+          "query_time_ms": 1.5223026275634766,
+          "tuning_cost": "统一参数，无需额外调参",
+          "note": "1天查询窗口内直接读取写时生成的降采样结果"
+        },
+        "lttb": {
+          "name": "查询侧LTTB",
+          "category": "external",
+          "output_points": 238,
+          "total_buckets": 0,
+          "compression_ratio": 72.60504201680672,
+          "correlation": 0.9668590865569021,
+          "nrmse": 1.4624126734575464,
+          "write_time_ms": 0.0,
+          "query_time_ms": 9.981999988667667,
+          "tuning_cost": "需预设输出点数(238)",
+          "note": "1天查询阶段扫描原始序列后再降采样"
+        },
+        "fixed_window": {
+          "name": "固定窗口聚合",
+          "category": "external",
+          "output_points": 240,
+          "total_buckets": 60,
+          "compression_ratio": 72.0,
+          "correlation": 0.9719256248213299,
+          "nrmse": 1.4853255279112352,
+          "write_time_ms": 0.0,
+          "query_time_ms": 2.2441000037360936,
+          "tuning_cost": "需预设窗口数(60)",
+          "note": "1天查询中，固定窗口数量与本专利方法的桶数对齐"
+        }
+      },
+      "cross_range_fixed_param_comparisons": {
+        "patent": {
+          "name": "本专利方法",
+          "category": "external",
+          "output_points": 1808,
+          "total_buckets": 452,
+          "compression_ratio": 66.90265486725664,
+          "correlation": 0.9994643265085668,
+          "nrmse": 0.029830649519363723,
+          "write_time_ms": 2228.863399999682,
+          "query_time_ms": 1.5223026275634766,
+          "tuning_cost": "统一参数，无需额外调参",
+          "note": "7天全程查询窗口内直接读取写时生成的降采样结果"
+        },
+        "lttb": {
+          "name": "查询侧LTTB",
+          "category": "external",
+          "output_points": 238,
+          "total_buckets": 0,
+          "compression_ratio": 508.2352941176471,
+          "correlation": 0.9746973360426019,
+          "nrmse": 0.20366623443977697,
+          "write_time_ms": 0.0,
+          "query_time_ms": 56.27770000137389,
+          "tuning_cost": "需预设输出点数(238)",
+          "note": "查询范围扩展到7天全程，但仍沿用1天查询确定的输出点数"
+        },
+        "fixed_window": {
+          "name": "固定窗口聚合",
+          "category": "external",
+          "output_points": 240,
+          "total_buckets": 60,
+          "compression_ratio": 504.0,
+          "correlation": 0.9739373343190697,
+          "nrmse": 0.20691751103551506,
+          "write_time_ms": 0.0,
+          "query_time_ms": 9.51560000248719,
+          "tuning_cost": "固定窗口数(60)，查询范围扩大后不调整",
+          "note": "查询范围扩展到7天全程，但仍沿用1天查询确定的桶数"
+        }
+      }
+    }
+  }
+}
