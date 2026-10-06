@@ -51,7 +51,12 @@ class HpcApi:
                 "captcha": "",
                 "checkKey": int(time.time() * 1000)
             }
-            response = self.session.post("http://hpc.hutb.edu.cn/hpc-backend/sys/encryptLogin", json=body, verify=False)
+            headers = {
+                'Content-Type': 'application/json;charset=UTF-8'
+            }
+            url = "https://hpc.hutb.edu.cn/hpc-backend/sys/encryptLogin"
+            response = self.session.post(url, json=body, verify=False, headers=headers)
+            logger.info(f"登录请求参数：{body}, method: {response.request.method} url: {url}, 响应状态码：{response.status_code} 响应:{response.text}")
             if response.status_code != 200:
                 logger.error(f"登录失败，状态码：{response.status_code}，响应内容：{response.text}")
             with open('assets/token.txt', 'w+') as f:
@@ -63,8 +68,8 @@ class HpcApi:
             
     @check_login
     def get_overview(self) -> dict:
-        url = f'http://hpc.hutb.edu.cn/hpc-backend/qos/compositeComputingResourceRelation?_t={int(time.time() * 1000)}'
-        data = self.session.get(url).json()
+        url = f'https://hpc.hutb.edu.cn/hpc-backend/qos/compositeComputingResourceRelation?_t={int(time.time() * 1000)}'
+        data = self.session.get(url, verify=False).json()
         if data.get('code', '') != 200:
             logger.error(f"获取HPCOverview失败，状态码：{data.get('code', '')}，响应内容：{data}")
             return data
@@ -73,8 +78,8 @@ class HpcApi:
     @check_login
     def get_nodes_info(self) -> dict:
         '''主要用于获得节点的ip地址，是否可用'''
-        url = 'http://hpc.hutb.edu.cn/hpc-backend/realtime-monitoring/deployment?_t=1767923755865'
-        data = self.session.get(url).json()
+        url = 'https://hpc.hutb.edu.cn/hpc-backend/realtime-monitoring/deployment?_t=1767923755865'
+        data = self.session.get(url, verify=False).json()
         if data.get('code', '') != 200:
             logger.error(f"获取HPC节点信息失败，状态码：{data.get('code', '')}，响应内容：{data}")
             return data
@@ -82,8 +87,8 @@ class HpcApi:
 
     @check_login
     def get_user_total(self) -> dict:
-        url = f'http://hpc.hutb.edu.cn/hpc-backend/sys/user/activeStatistics?_t={int(time.time() * 1000)}'
-        data = self.session.get(url).json()
+        url = f'https://hpc.hutb.edu.cn/hpc-backend/sys/user/activeStatistics?_t={int(time.time() * 1000)}'
+        data = self.session.get(url, verify=False).json()
         if data.get('code', '') != 200:
             logger.error(f"获取HPCUserTotal失败，状态码：{data.get('code', '')}，响应内容：{data}")
             return data
@@ -91,7 +96,7 @@ class HpcApi:
 
     @check_login
     def get_tasks(self, status=None, partition=None, createBy=None, task_name=None, startTime=None, endTime=None, page_no=1, pagesize=1000) -> dict:
-        url = 'http://hpc.hutb.edu.cn/hpc-backend/task/pageList'
+        url = 'https://hpc.hutb.edu.cn/hpc-backend/task/pageList'
         
         params = {
             'column': 'startTime',
@@ -116,7 +121,7 @@ class HpcApi:
         if endTime:
             params['endTime'] = endTime
 
-        data = self.session.get(url, params=params).json()
+        data = self.session.get(url, params=params, verify=False).json()
         if data.get('code', '') != 200:
             logger.error(f"获取HPC任务失败，参数：{params}，状态码：{data.get('code', '')}，响应内容：{data}")
             return data
@@ -124,7 +129,7 @@ class HpcApi:
 
     @check_login
     def get_user_list(self, username=None, realname=None, page_no=1, pagesize=10) -> dict:
-        url = 'http://hpc.hutb.edu.cn/hpc-backend/sys/user/listAll'
+        url = 'https://hpc.hutb.edu.cn/hpc-backend/sys/user/listAll'
         params = {
             'column': 'createTime',
             'order': 'desc',
@@ -135,7 +140,7 @@ class HpcApi:
             '_t': int(time.time() * 1000),
         }
 
-        data = self.session.get(url, params=params).json()
+        data = self.session.get(url, params=params, verify=False).json()
         if data.get('code', '') != 200:
             logger.error(f"获取HPC用户列表失败，参数：{params}，状态码：{data.get('code', '')}，响应内容：{data}")
             return data
@@ -143,12 +148,12 @@ class HpcApi:
 
     @check_login
     def get_node_cpu_usage(self, node_name=None) -> dict:
-        url = 'http://hpc.hutb.edu.cn/hpc-backend/realtime-monitoring/cpuUsage'
+        url = 'https://hpc.hutb.edu.cn/hpc-backend/realtime-monitoring/cpuUsage'
         body = {
         "node": node_name
         }
 
-        data = self.session.post(url, json=body).json()
+        data = self.session.post(url, json=body, verify=False).json()
         if data.get('code', '') != 200:
             logger.error(f"获取HPC节点{node_name}CPU占用失败，状态码：{data.get('code', '')}，响应内容：{data}")
             return data
@@ -156,12 +161,12 @@ class HpcApi:
 
     @check_login
     def get_node_memory_usage(self, node_name=None) -> dict:
-        url = 'http://hpc.hutb.edu.cn/hpc-backend/realtime-monitoring/memoryUsage'
+        url = 'https://hpc.hutb.edu.cn/hpc-backend/realtime-monitoring/memoryUsage'
         body = {
             "node": node_name
         }
 
-        data = self.session.post(url, json=body).json()
+        data = self.session.post(url, json=body, verify=False).json()
         if data.get('code', '') != 200:
             logger.error(f"获取HPC节点{node_name}内存占用失败，状态码：{data.get('code', '')}，响应内容：{data}")
             return data
@@ -169,8 +174,8 @@ class HpcApi:
 
     @check_login
     def get_node_gpu_info(self, node_name=None) -> dict:
-        url = f'http://hpc.hutb.edu.cn/hpc-backend/monitoring/card/metrics?node={node_name}&_t={int(time.time() * 1000)}'
-        data = self.session.get(url).json()
+        url = f'https://hpc.hutb.edu.cn/hpc-backend/monitoring/card/metrics?node={node_name}&_t={int(time.time() * 1000)}'
+        data = self.session.get(url, verify=False).json()
         if data.get('code', '') != 200:
             logger.error(f"获取HPC节点{node_name}显卡信息失败，状态码：{data.get('code', '')}，响应内容：{data}")
             return data
@@ -179,8 +184,8 @@ class HpcApi:
     @check_login
     def get_gpu_usage(self, node_name=None) -> dict:
         '''获得节点所有显卡的使用率'''
-        url = f'http://hpc.hutb.edu.cn/hpc-backend/monitoring/card/usageTrend?node={node_name}&_t={int(time.time() * 1000)}'
-        data = self.session.get(url).json()
+        url = f'https://hpc.hutb.edu.cn/hpc-backend/monitoring/card/usageTrend?node={node_name}&_t={int(time.time() * 1000)}'
+        data = self.session.get(url, verify=False).json()
         if data.get('code', '') != 200:
             logger.error(f"获取HPC节点{node_name}显卡使用率失败，状态码：{data.get('code', '')}，响应内容：{data}")
             return data
@@ -188,10 +193,10 @@ class HpcApi:
 
     @check_login
     def get_all_users(self, page_no=1, pagesize=1000, username=None) -> list[dict]:
-        url = f'http://hpc.hutb.edu.cn/hpc-backend/sys/user/listAll?column=createTime&order=desc&pageNo={page_no}&pageSize={pagesize}&_t={int(time.time() * 1000)}'
+        url = f'https://hpc.hutb.edu.cn/hpc-backend/sys/user/listAll?column=createTime&order=desc&pageNo={page_no}&pageSize={pagesize}&_t={int(time.time() * 1000)}'
         if username:
             url += f'&username={username}'
-        data = self.session.get(url).json()
+        data = self.session.get(url, verify=False).json()
         if data.get('code', '') != 0:
             logger.error(f"获取HPC所有用户失败，状态码：{data.get('code', '')}，响应内容：{data}")
             return data
@@ -199,8 +204,8 @@ class HpcApi:
 
     @check_login
     def recent_login_date(self, username):
-        url = f'http://hpc.hutb.edu.cn/hpc-backend/sys/log/list?column=createTime&order=desc&pageNo=1&pageSize=10&keyWord={username}&logType=1&_t={int(time.time() * 1000)}'
-        data = self.session.get(url).json()
+        url = f'https://hpc.hutb.edu.cn/hpc-backend/sys/log/list?column=createTime&order=desc&pageNo=1&pageSize=10&keyWord={username}&logType=1&_t={int(time.time() * 1000)}'
+        data = self.session.get(url, verify=False).json()
         if data.get('code', '') != 0:
             logger.error(f"获取HPC用户{username}最近登录时间失败，状态码：{data.get('code', '')}，响应内容：{data}")
             return username, None
