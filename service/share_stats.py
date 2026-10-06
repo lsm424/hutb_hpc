@@ -121,9 +121,12 @@ def compute_share_stats(tasks, end_bound=None):
         start_str = t.get("startTime") or t.get("submitTime")
         end_str = t.get("endTime")
         nodes_str = t.get("nodes") or ""
+        if not nodes_str:
+            continue
         node_count = t.get("nodeCount") or 1
         resource_used = t.get("resourceUsed") or {}
-
+        if node_count > 1:
+            node_count = node_count
         start_dt = _parse_time(start_str)
         end_dt = _parse_time(end_str)
 

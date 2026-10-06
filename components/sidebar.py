@@ -49,38 +49,6 @@ def create_sidebar():
                         className="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors nav-link",  # px-4 -> px-3
                         id="nav-jobs"
                     ),
-                    # 用户管理二级菜单
-                    html.Div(
-                        [
-                            # 一级菜单标题
-                            html.Div(
-                                [
-                                    html.I(className="fa-solid fa-users w-5 text-center"),
-                                    html.Span("用户管理"),
-                                    html.I(className="fa-solid fa-chevron-down ml-auto text-xs transition-transform", id="user-menu-icon"),
-                                ],
-                                className="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors cursor-pointer text-gray-400 hover:bg-gray-800 hover:text-white",
-                                id="nav-users-parent"
-                            ),
-                            # 二级菜单
-                            html.Div(
-                                [
-                                    dcc.Link(
-                                        [
-                                            html.I(className="fa-solid fa-circle text-[6px] w-5 text-center"),
-                                            html.Span("平台用户查看"),
-                                        ],
-                                        href="/users",
-                                        className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors nav-link text-sm",
-                                        id="nav-users"
-                                    ),
-                                ],
-                                className="ml-4 mt-1 space-y-1 overflow-hidden transition-all",
-                                id="user-submenu"
-                            ),
-                        ],
-                        className="space-y-1"
-                    ),
                     # 数据统计二级菜单
                     html.Div(
                         [
@@ -118,6 +86,38 @@ def create_sidebar():
                                 ],
                                 className="ml-4 mt-1 space-y-1 overflow-hidden transition-all",
                                 id="stats-submenu"
+                            ),
+                        ],
+                        className="space-y-1"
+                    ),
+                    # 用户管理二级菜单
+                    html.Div(
+                        [
+                            # 一级菜单标题
+                            html.Div(
+                                [
+                                    html.I(className="fa-solid fa-users w-5 text-center"),
+                                    html.Span("用户管理"),
+                                    html.I(className="fa-solid fa-chevron-down ml-auto text-xs transition-transform", id="user-menu-icon"),
+                                ],
+                                className="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors cursor-pointer text-gray-400 hover:bg-gray-800 hover:text-white",
+                                id="nav-users-parent"
+                            ),
+                            # 二级菜单
+                            html.Div(
+                                [
+                                    dcc.Link(
+                                        [
+                                            html.I(className="fa-solid fa-circle text-[6px] w-5 text-center"),
+                                            html.Span("平台用户查看"),
+                                        ],
+                                        href="/users",
+                                        className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors nav-link text-sm",
+                                        id="nav-users"
+                                    ),
+                                ],
+                                className="ml-4 mt-1 space-y-1 overflow-hidden transition-all",
+                                id="user-submenu"
                             ),
                         ],
                         className="space-y-1"
