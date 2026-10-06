@@ -1,4 +1,4 @@
-﻿import base64
+import base64
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 import struct
@@ -126,6 +126,28 @@ class HpcApi:
             logger.error(f"获取HPC任务失败，参数：{params}，状态码：{data.get('code', '')}，响应内容：{data}")
             return data
         return data['result']['records']
+
+    def get_all_tasks(self, startTime=None, endTime=None, pagesize=1000, max_pages=100) -> list:
+        '''分页获取指定时间范围内的全部任务（用于机时统计）'''
+        all_records = []
+        page_no = 1
+        while True:
+            try:
+                records = self.get_tasks(startTime=startTime, endTime=endTime, page_no=page_no, pagesize=pagesize)
+            except Exception as e:
+                logger.error(f"获取HPC任务分页数据失败，页码：{page_no}，异常：{e}")
+                break
+            if not records or not isinstance(records, list):
+                break
+            all_records.extend(records)
+            if len(records) < pagesize:
+                break
+            page_no += 1
+            if page_no > max_pages:
+                logger.warning(f"获取HPC任务超过最大页数{max_pages}，数据可能不完整")
+                break
+        logger.info(f"获取HPC任务完成，时间范围：{startTime} ~ {endTime}，共{len(all_records)}条")
+        return all_records
 
     @check_login
     def get_user_list(self, username=None, realname=None, page_no=1, pagesize=10) -> dict:

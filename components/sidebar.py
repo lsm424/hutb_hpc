@@ -81,14 +81,46 @@ def create_sidebar():
                         ],
                         className="space-y-1"
                     ),
-                    dcc.Link(
+                    # 数据统计二级菜单
+                    html.Div(
                         [
-                            html.I(className="fa-solid fa-calendar-day w-5 text-center"),
-                            html.Span("日报"),
+                            # 一级菜单标题
+                            html.Div(
+                                [
+                                    html.I(className="fa-solid fa-chart-column w-5 text-center"),
+                                    html.Span("数据统计"),
+                                    html.I(className="fa-solid fa-chevron-down ml-auto text-xs transition-transform", id="stats-menu-icon"),
+                                ],
+                                className="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors cursor-pointer text-gray-400 hover:bg-gray-800 hover:text-white",
+                                id="nav-stats-parent"
+                            ),
+                            # 二级菜单
+                            html.Div(
+                                [
+                                    dcc.Link(
+                                        [
+                                            html.I(className="fa-solid fa-circle text-[6px] w-5 text-center"),
+                                            html.Span("日报"),
+                                        ],
+                                        href="/daily",
+                                        className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors nav-link text-sm",
+                                        id="nav-daily"
+                                    ),
+                                    dcc.Link(
+                                        [
+                                            html.I(className="fa-solid fa-circle text-[6px] w-5 text-center"),
+                                            html.Span("共享统计"),
+                                        ],
+                                        href="/share-stats",
+                                        className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors nav-link text-sm",
+                                        id="nav-share-stats"
+                                    ),
+                                ],
+                                className="ml-4 mt-1 space-y-1 overflow-hidden transition-all",
+                                id="stats-submenu"
+                            ),
                         ],
-                        href="/daily",
-                        className="flex items-center gap-3 px-3 py-3 rounded-lg transition-colors nav-link",  # px-4 -> px-3
-                        id="nav-daily"
+                        className="space-y-1"
                     ),
                 ],
                 className="flex-1 px-2 py-6 space-y-2"  # px-4 -> px-2
@@ -117,7 +149,7 @@ def create_sidebar():
 
 # Callback to handle active state of nav links
 @callback(
-    [Output(f"nav-{page}", "className") for page in ["dashboard", "jobs", "nodes", "daily", "users"]],
+    [Output(f"nav-{page}", "className") for page in ["dashboard", "jobs", "nodes", "daily", "share-stats", "users"]],
     [Input("url", "pathname"), Input('url', 'search')]
 )
 def update_active_links(pathname, search):
@@ -135,7 +167,7 @@ def update_active_links(pathname, search):
         pathname = pathname[:-1]
 
     outputs = []
-    for page in ["dashboard", "jobs", "nodes", "daily", "users"]:
+    for page in ["dashboard", "jobs", "nodes", "daily", "share-stats", "users"]:
         # Match logic
         is_active = False
         if page == "dashboard" and (pathname == "/" or pathname == "/dashboard"):
@@ -143,8 +175,8 @@ def update_active_links(pathname, search):
         elif f"/{page}" in str(pathname):
             is_active = True
 
-        if page == "users":
-            # Use submenu styling for users
+        if page in ("users", "daily", "share-stats"):
+            # Use submenu styling for submenu items
             if is_active:
                 outputs.append(f"{submenu_base_class} {active_class}")
             else:
@@ -157,41 +189,54 @@ def update_active_links(pathname, search):
     return outputs
 
 
-# Callback to toggle user submenu and update parent active state
-@callback(
-    Output("user-submenu", "style"),
-    Output("user-menu-icon", "className"),
-    Output("nav-users-parent", "className"),
-    Input("nav-users-parent", "n_clicks"),
-    Input("url", "pathname"),
-    State("user-submenu", "style"),
-)
-def toggle_user_menu(n_clicks, pathname, current_style):
-    # Base classes
-    parent_base_class = "flex items-center gap-3 px-3 py-3 rounded-lg transition-colors cursor-pointer"
-    parent_active_class = "bg-gray-800 text-white"
-    parent_inactive_class = "text-gray-400 hover:bg-gray-800 hover:text-white"
+def _make_submenu_toggler(parent_id, submenu_id, icon_id, active_paths):
+    """为一组一级/二级菜单注册展开折叠与高亮回调"""
 
-    # Check if users page is active
-    is_users_active = pathname and "/users" in pathname
+    @callback(
+        Output(submenu_id, "style"),
+        Output(icon_id, "className"),
+        Output(parent_id, "className"),
+        Input(parent_id, "n_clicks"),
+        Input("url", "pathname"),
+        State(submenu_id, "style"),
+    )
+    def toggle_submenu(n_clicks, pathname, current_style):
+        # Base classes
+        parent_base_class = "flex items-center gap-3 px-3 py-3 rounded-lg transition-colors cursor-pointer"
+        parent_active_class = "bg-gray-800 text-white"
+        parent_inactive_class = "text-gray-400 hover:bg-gray-800 hover:text-white"
 
-    # Set parent active state
-    if is_users_active:
-        parent_class = f"{parent_base_class} {parent_active_class}"
-    else:
-        parent_class = f"{parent_base_class} {parent_inactive_class}"
+        icon_down = "fa-solid fa-chevron-down ml-auto text-xs transition-transform"
+        icon_folded = "fa-solid fa-chevron-down ml-auto text-xs transition-transform -rotate-90"
 
-    # Default: expanded if users page is active
-    if n_clicks is None:
-        if is_users_active:
-            return {"height": "auto", "opacity": "1"}, "fa-solid fa-chevron-down ml-auto text-xs transition-transform", parent_class
+        # Check if any child page is active
+        is_active = bool(pathname) and any(p in pathname for p in active_paths)
+
+        # Set parent active state
+        if is_active:
+            parent_class = f"{parent_base_class} {parent_active_class}"
         else:
-            return {"height": "0px", "opacity": "0"}, "fa-solid fa-chevron-down ml-auto text-xs transition-transform -rotate-90", parent_class
+            parent_class = f"{parent_base_class} {parent_inactive_class}"
 
-    # Toggle based on clicks
-    is_expanded = current_style and current_style.get("height") != "0px"
+        # Default: expanded if child page is active
+        if n_clicks is None:
+            if is_active:
+                return {"height": "auto", "opacity": "1"}, icon_down, parent_class
+            else:
+                return {"height": "0px", "opacity": "0"}, icon_folded, parent_class
 
-    if is_expanded:
-        return {"height": "0px", "opacity": "0"}, "fa-solid fa-chevron-down ml-auto text-xs transition-transform -rotate-90", parent_class
-    else:
-        return {"height": "auto", "opacity": "1"}, "fa-solid fa-chevron-down ml-auto text-xs transition-transform", parent_class
+        # Toggle based on clicks
+        is_expanded = current_style and current_style.get("height") != "0px"
+
+        if is_expanded:
+            return {"height": "0px", "opacity": "0"}, icon_folded, parent_class
+        else:
+            return {"height": "auto", "opacity": "1"}, icon_down, parent_class
+
+    return toggle_submenu
+
+
+# 用户管理二级菜单展开/折叠
+_make_submenu_toggler("nav-users-parent", "user-submenu", "user-menu-icon", ["/users"])
+# 数据统计二级菜单展开/折叠
+_make_submenu_toggler("nav-stats-parent", "stats-submenu", "stats-menu-icon", ["/daily", "/share-stats"])
